@@ -29,6 +29,9 @@ A web-based 2D battle game built with TypeScript and Phaser.js where players fig
 
 ### Running the Game
 
+**Play Online**: The game is automatically deployed to GitHub Pages and can be played at: https://barro32.github.io/randos/
+
+**Local Development**:
 ```bash
 # Install dependencies
 npm install
@@ -37,7 +40,7 @@ npm install
 npm run dev
 
 # Build for production
-npm run build
+npm run build:prod
 ```
 
 The game will be available at `http://localhost:8080` when running the development server.
