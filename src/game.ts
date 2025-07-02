@@ -46,6 +46,7 @@ class GameScene extends Phaser.Scene {
     private updateCallback: (playersAlive: number) => void;
     private gameEndCallback: (winner: string) => void;
     private healthBars: Phaser.GameObjects.Graphics[] = [];
+    private goldBars: Phaser.GameObjects.Graphics[] = [];
     private playerLabels: Phaser.GameObjects.Text[] = [];
     private gameEnded: boolean = false;
 
@@ -127,15 +128,41 @@ class GameScene extends Phaser.Scene {
     private handlePlayerCollision(player1: Player, player2: Player): void {
         if (!player1.isAlive || !player2.isAlive) return;
 
+        // Determine who is the attacker based on velocity (speed)
+        const body1 = player1.sprite.body as Phaser.Physics.Arcade.Body;
+        const body2 = player2.sprite.body as Phaser.Physics.Arcade.Body;
+        
+        const speed1 = Math.sqrt(body1.velocity.x ** 2 + body1.velocity.y ** 2);
+        const speed2 = Math.sqrt(body2.velocity.x ** 2 + body2.velocity.y ** 2);
+        
+        let attacker: Player, victim: Player;
+        if (speed1 > speed2) {
+            attacker = player1;
+            victim = player2;
+        } else if (speed2 > speed1) {
+            attacker = player2;
+            victim = player1;
+        } else {
+            // If speeds are equal, randomly choose attacker
+            if (Math.random() < 0.5) {
+                attacker = player1;
+                victim = player2;
+            } else {
+                attacker = player2;
+                victim = player1;
+            }
+        }
+
+        // Attacker steals 1 gold from victim
+        const stolenGold = victim.stealGold(1);
+        attacker.addGold(stolenGold);
+
         // Both players take damage
         const damage = 15;
         player1.takeDamage(damage);
         player2.takeDamage(damage);
 
         // Push players apart to prevent stuck collision
-        const body1 = player1.sprite.body as Phaser.Physics.Arcade.Body;
-        const body2 = player2.sprite.body as Phaser.Physics.Arcade.Body;
-        
         const angle = Phaser.Math.Angle.Between(player1.sprite.x, player1.sprite.y, player2.sprite.x, player2.sprite.y);
         const force = 100;
         
@@ -144,10 +171,10 @@ class GameScene extends Phaser.Scene {
     }
 
     private createUI(): void {
-        // Create health bars and labels for each player
+        // Create health bars, gold bars and labels for each player
         for (let i = 0; i < this.players.length; i++) {
             const x = 20;
-            const y = 30 + i * 25;
+            const y = 30 + i * 35; // Increased spacing for gold bar
 
             // Player label
             const label = this.add.text(x, y, this.players[i].id, {
@@ -159,11 +186,26 @@ class GameScene extends Phaser.Scene {
             // Health bar background
             const healthBarBg = this.add.graphics();
             healthBarBg.fillStyle(0x333333);
-            healthBarBg.fillRect(x + 80, y + 2, 100, 10);
+            healthBarBg.fillRect(x + 80, y + 2, 100, 8);
 
             // Health bar
             const healthBar = this.add.graphics();
             this.healthBars.push(healthBar);
+
+            // Gold bar background
+            const goldBarBg = this.add.graphics();
+            goldBarBg.fillStyle(0x333333);
+            goldBarBg.fillRect(x + 80, y + 12, 100, 8);
+
+            // Gold bar
+            const goldBar = this.add.graphics();
+            this.goldBars.push(goldBar);
+
+            // Gold label
+            this.add.text(x + 185, y + 12, 'Gold', {
+                fontSize: '10px',
+                color: '#ffffff'
+            });
         }
     }
 
@@ -171,6 +213,7 @@ class GameScene extends Phaser.Scene {
         for (let i = 0; i < this.players.length; i++) {
             const player = this.players[i];
             const healthBar = this.healthBars[i];
+            const goldBar = this.goldBars[i];
             const label = this.playerLabels[i];
 
             // Update health bar
@@ -179,7 +222,15 @@ class GameScene extends Phaser.Scene {
                 const healthPercent = player.getHealthPercentage() / 100;
                 const color = healthPercent > 0.5 ? 0x00ff00 : healthPercent > 0.25 ? 0xffff00 : 0xff0000;
                 healthBar.fillStyle(color);
-                healthBar.fillRect(80, 30 + i * 25 + 2, 100 * healthPercent, 10);
+                healthBar.fillRect(80, 30 + i * 35 + 2, 100 * healthPercent, 8);
+            }
+
+            // Update gold bar
+            goldBar.clear();
+            if (player.isAlive) {
+                const goldPercent = Math.min(player.getGold() / 20, 1); // Max display of 20 gold for scale
+                goldBar.fillStyle(0xffd700); // Gold color
+                goldBar.fillRect(80, 30 + i * 35 + 12, 100 * goldPercent, 8);
             }
 
             // Update label color based on player status
