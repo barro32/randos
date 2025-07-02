@@ -38,9 +38,12 @@ npm run dev
 
 # Build for production
 npm run build
+
+# Preview production build
+npm run preview
 ```
 
-The game will be available at `http://localhost:8080` when running the development server.
+The game will be available at `http://localhost:5173` when running the development server, or `http://localhost:4173` for the preview server.
 
 ## Setup
 
