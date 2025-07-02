@@ -4,6 +4,7 @@ export class Player {
     public sprite: Phaser.GameObjects.Rectangle;
     public health: number = 100;
     public maxHealth: number = 100;
+    public gold: number = 10;
     public isAlive: boolean = true;
     public id: string;
     public color: number;
@@ -96,6 +97,20 @@ export class Player {
 
     public getHealthPercentage(): number {
         return (this.health / this.maxHealth) * 100;
+    }
+
+    public getGold(): number {
+        return this.gold;
+    }
+
+    public stealGold(amount: number): number {
+        const stolenAmount = Math.min(amount, this.gold);
+        this.gold -= stolenAmount;
+        return stolenAmount;
+    }
+
+    public addGold(amount: number): void {
+        this.gold += amount;
     }
 
     public destroy(): void {
