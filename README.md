@@ -6,6 +6,42 @@ A collection of random utilities and tools for various development tasks.
 
 Randos is a project designed to house miscellaneous utilities, scripts, and tools that can be useful for developers. This repository serves as a collection point for various random but potentially useful code snippets and tools.
 
+## Randos Battle Arena
+
+A web-based 2D battle game built with TypeScript and Phaser.js where players fight in an arena until only one remains!
+
+### Game Features
+
+- **Player Selection**: Choose between 2-8 players to battle
+- **Random Movement**: Players move randomly around the arena
+- **Combat System**: Players deal damage when they collide with each other
+- **Health System**: Players are eliminated when their HP reaches zero
+- **Win Condition**: Last player standing wins the game
+- **Real-time UI**: Live health bars and player count updates
+
+### How to Play
+
+1. Select the number of players (2-8)
+2. Click "Start Game" to begin the battle
+3. Watch as players move randomly and battle each other
+4. The game ends when only one player remains
+5. Use "Restart Game" to play again
+
+### Running the Game
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+The game will be available at `http://localhost:8080` when running the development server.
+
 ## Setup
 
 To set up this project locally:
@@ -20,4 +56,8 @@ To set up this project locally:
    cd randos
    ```
 
-3. The project is ready to use! Individual tools and utilities may have their own specific setup requirements, which will be documented in their respective directories or files.
+3. Install dependencies and run the battle arena game:
+   ```bash
+   npm install
+   npm run dev
+   ```
