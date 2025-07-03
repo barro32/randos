@@ -24,7 +24,7 @@ jobs:
       run: npm ci
       
     - name: Build for production
-      run: npm run build:prod
+      run: npm run build:prod -- --config ./vite.config.ts
       
     - name: Deploy to GitHub Pages
       if: github.ref == 'refs/heads/main'

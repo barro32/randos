@@ -1,12 +1,13 @@
 import { defineConfig } from 'vite';
+import { resolve } from 'path';
 
 export default defineConfig(({ mode }) => {
   const isProduction = mode === 'production';
 
   return {
-    root: './src',
+    root: resolve(__dirname, 'src'),
     build: {
-      outDir: '../dist',
+      outDir: resolve(__dirname, 'dist'),
       emptyOutDir: true,
       sourcemap: true,
       rollupOptions: {
