@@ -45,6 +45,20 @@ npm run build:prod
 
 The game will be available at `http://localhost:8080` when running the development server.
 
+### Build System
+
+This project uses **Vite** for fast development and optimized production builds:
+
+- **Development**: `npm run dev` - Fast development server with HMR (Hot Module Replacement)
+- **Build (Development)**: `npm run build` - Creates development build with source maps
+- **Build (Production)**: `npm run build:prod` - Creates optimized production build with minification
+
+Vite provides:
+- Lightning-fast development server startup
+- Built-in TypeScript support (no additional configuration needed)
+- Efficient ES module-based bundling
+- Optimized production builds with automatic code splitting
+
 ## Setup
 
 To set up this project locally:
