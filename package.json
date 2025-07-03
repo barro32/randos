@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A collection of random utilities and tools for various development tasks.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "vite build --mode=development",
     "build:prod": "vite build --mode=production",

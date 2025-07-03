@@ -9,33 +9,53 @@ failed to load config from /home/runner/work/randos/randos/vite.config.ts
 ```
 
 ### Root Cause
-The issue was caused by relative path resolution in the Vite configuration file. When GitHub Actions runs the build process, it may execute from a different working directory than expected, causing Vite to be unable to resolve relative paths like `./src` and `../dist`.
+The issue was caused by an ES Module compatibility problem in the GitHub Actions CI environment. The error message showed:
+```
+Error [ERR_REQUIRE_ESM]: require() of ES Module /home/runner/work/randos/randos/node_modules/vite/dist/node/index.js from /home/runner/work/randos/randos/vite.config.ts not supported.
+```
+
+This occurs because:
+1. Vite v7+ is a pure ES Module
+2. The package.json didn't specify `"type": "module"`
+3. Node.js in the CI environment was treating the configuration as CommonJS, causing conflicts
 
 ### Solution
-1. **Updated vite.config.ts**: Changed relative paths to absolute paths using `resolve(__dirname, ...)` to ensure paths work regardless of the current working directory.
+**Updated package.json**: Added `"type": "module"` to ensure proper ES Module handling in all environments, including CI/CD pipelines.
 
-2. **Updated GitHub Actions workflow**: Added explicit `--config ./vite.config.ts` flag to ensure the config file is found reliably.
+The existing configurations were already correct:
+- `vite.config.ts` already used absolute paths with `resolve(__dirname, ...)`
+- GitHub Actions workflow already had the `--config ./vite.config.ts` flag
 
 ### Changes Made
 
-#### vite.config.ts
-```typescript
-// Before (relative paths)
-root: './src',
-outDir: '../dist',
+#### package.json
+```json
+// Before
+{
+  "name": "randos",
+  "version": "1.0.0",
+  ...
+}
 
-// After (absolute paths)
+// After  
+{
+  "name": "randos",
+  "version": "1.0.0",
+  "type": "module",
+  ...
+}
+```
+
+The vite.config.ts and GitHub Actions workflow were already correctly configured:
+
+#### vite.config.ts (already correct)
+```typescript
 root: resolve(__dirname, 'src'),
 outDir: resolve(__dirname, 'dist'),
 ```
 
-#### .github/workflows/deploy.yml
+#### .github/workflows/deploy.yml (already correct)
 ```yaml
-# Before
-- name: Build for production
-  run: npm run build:prod
-
-# After
 - name: Build for production
   run: npm run build:prod -- --config ./vite.config.ts
 ```
@@ -49,9 +69,10 @@ The fix has been tested to ensure:
 
 ### Future Reference
 When working with Vite configurations in CI/CD environments:
-1. Use absolute paths with `resolve(__dirname, ...)` for directory configurations
-2. Explicitly specify the config file path in CI scripts when needed
-3. Test builds from different working directories to catch path resolution issues early
+1. **Always add `"type": "module"` to package.json** when using Vite v7+ to ensure proper ES Module handling
+2. Use absolute paths with `resolve(__dirname, ...)` for directory configurations (already implemented)
+3. Explicitly specify the config file path in CI scripts when needed (already implemented)
+4. Test builds from different working directories to catch path resolution issues early
 
 ### Application Verification
 The built application has been verified to work correctly:
