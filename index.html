@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Randos Battle Arena</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .menu {
+            background-color: #34495e;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .input-group {
+            margin: 20px 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+        }
+        
+        input {
+            width: 100px;
+            text-align: center;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            padding: 15px 30px;
+            margin: 10px;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button:disabled {
+            background-color: #7f8c8d;
+            cursor: not-allowed;
+        }
+        
+        #gameContainer {
+            margin-top: 20px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .game-info {
+            background-color: #34495e;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+    </style>
+  <script type="module" crossorigin src="/randos/index.R-M_MeFH.js"></script>
+</head>
+<body>
+    <h1>Randos Battle Arena</h1>
+    
+    <div id="menu" class="menu">
+        <div class="input-group">
+            <label for="playerCount">Number of Players (2-8):</label>
+            <input type="number" id="playerCount" min="2" max="8" value="4">
+        </div>
+        <button id="startButton">Start Game</button>
+    </div>
+    
+    <div id="gameInfo" class="game-info hidden">
+        <div id="playersAlive">Players Alive: 0</div>
+        <button id="restartButton">Restart Game</button>
+    </div>
+    
+    <div id="gameContainer"></div>
+</body>
+</html>
