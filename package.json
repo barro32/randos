@@ -2,11 +2,12 @@
   "name": "randos",
   "version": "1.0.0",
   "description": "A collection of random utilities and tools for various development tasks.",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "build": "vite build --mode=development",
-    "build:prod": "vite build --mode=production",
-    "dev": "vite",
+    "build": "vite build --mode=development --config ./vite.config.mts",
+    "build:prod": "vite build --mode=production --config ./vite.config.mts",
+    "dev": "vite --config ./vite.config.mts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

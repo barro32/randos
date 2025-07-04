@@ -11,9 +11,9 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
-    "isolatedModules": true,
-    "noEmit": true
+    "isolatedModules": true
+    // "noEmit": true, // Allow emitting files, Vite might need to process the config
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "vite.config.mts"],
   "exclude": ["node_modules", "dist"]
 }
