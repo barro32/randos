@@ -22,6 +22,6 @@ export default defineConfig(({ mode }) => {
       port: 8080,
       open: true
     },
-    base: './'
+    base: isProduction ? '/randos/' : './'
   };
 });
