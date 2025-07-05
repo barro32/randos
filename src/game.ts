@@ -420,22 +420,30 @@ class GameScene extends Phaser.Scene {
 
         // Push players apart to prevent them from getting stuck and to simulate a bounce.
         // This bounce effect happens regardless of invulnerability status.
-        const angle = Phaser.Math.Angle.Between(player1.sprite.x, player1.sprite.y, player2.sprite.x, player2.sprite.y);
-        const force = 100; // This force determines how strongly they are pushed apart.
-                           // Player's setBounce(1) will also contribute if this push isn't too overwhelming.
-        
-        // Apply an immediate push-back velocity.
-        // Normalize the current velocities to ensure the push isn't additive in a weird way if they are already moving fast.
-        // Or, simply override velocity for a consistent push-back.
-        body1.setVelocity(-Math.cos(angle) * force, -Math.sin(angle) * force);
-        body2.setVelocity(Math.cos(angle) * force, Math.sin(angle) * force);
+        const collisionAngle = Phaser.Math.Angle.Between(player1.sprite.x, player1.sprite.y, player2.sprite.x, player2.sprite.y);
 
-        // Additionally, ensure Phaser's own bounce mechanics can work if desired.
-        // The bodies already have bounce set to 1. The collider should handle separation.
-        // The manual setVelocity above gives a more direct "explosion" like separation.
-        // If we want Phaser's physics to handle more of the bounce, we might reduce the manual force
-        // or rely on `body.setBounce(1)` and the physics engine's collision resolution.
-        // For now, the explicit push is kept.
+        // --- Player 1 bounce logic ---
+        // Reflect player1's velocity based on the collision angle
+        // For a simple reversal effect, we can use the collisionAngle directly
+        // More advanced reflection would use the current velocity and surface normal
+        const newVel1 = new Phaser.Math.Vector2(-Math.cos(collisionAngle), -Math.sin(collisionAngle));
+        newVel1.normalize().scale(player1.moveSpeed); // Access moveSpeed from player instance
+        body1.setVelocity(newVel1.x, newVel1.y);
+        player1.currentVelocity.set(newVel1.x, newVel1.y); // Update player's internal velocity
+
+        // --- Player 2 bounce logic ---
+        // Player2 bounces in the opposite direction
+        const newVel2 = new Phaser.Math.Vector2(Math.cos(collisionAngle), Math.sin(collisionAngle));
+        newVel2.normalize().scale(player2.moveSpeed); // Access moveSpeed from player instance
+        body2.setVelocity(newVel2.x, newVel2.y);
+        player2.currentVelocity.set(newVel2.x, newVel2.y); // Update player's internal velocity
+
+
+        // The existing `body.setBounce(1)` on players might also contribute.
+        // The explicit setVelocity above provides a more controlled bounce direction and speed.
+        // If relying purely on Arcade physics bounce, we might not need to manually setVelocity here,
+        // but then controlling the exact bounce direction relative to player properties is harder.
+        // This approach gives direct control.
     }
 
     private createUI(): void {
