@@ -215,6 +215,7 @@ class GameScene extends Phaser.Scene {
     private healthBars: Phaser.GameObjects.Graphics[] = [];
     private goldBars: Phaser.GameObjects.Graphics[] = [];
     private playerLabels: Phaser.GameObjects.Text[] = [];
+    private playerInventoryTexts: Phaser.GameObjects.Text[] = []; // Added for inventory icons
     private gameEnded: boolean = false;
     private roundOverFlag: boolean = false; // Renamed to avoid conflict, controls round logic within scene
 
@@ -457,11 +458,12 @@ class GameScene extends Phaser.Scene {
     private createUI(): void {
         // Create health bars, gold bars and labels for each player
         for (let i = 0; i < this.players.length; i++) {
+            const player = this.players[i];
             const x = 20;
-            const y = 30 + i * 35; // Increased spacing for gold bar
+            const yBase = 30 + i * 50; // Increased spacing for inventory line
 
             // Player label
-            const label = this.add.text(x, y, this.players[i].id, {
+            const label = this.add.text(x, yBase, player.id, {
                 fontSize: '14px',
                 color: '#ffffff'
             });
@@ -470,8 +472,7 @@ class GameScene extends Phaser.Scene {
             // Health bar background
             const healthBarBg = this.add.graphics();
             healthBarBg.fillStyle(0x333333);
-            healthBarBg.fillRect(x + 80, y + 2, 100, 8);
-
+            healthBarBg.fillRect(x + 80, yBase + 2, 100, 8);
             // Health bar
             const healthBar = this.add.graphics();
             this.healthBars.push(healthBar);
@@ -479,17 +480,19 @@ class GameScene extends Phaser.Scene {
             // Gold bar background
             const goldBarBg = this.add.graphics();
             goldBarBg.fillStyle(0x333333);
-            goldBarBg.fillRect(x + 80, y + 12, 100, 8);
-
+            goldBarBg.fillRect(x + 80, yBase + 12, 100, 8);
             // Gold bar
             const goldBar = this.add.graphics();
             this.goldBars.push(goldBar);
+            // Gold label text (static)
+            this.add.text(x + 185, yBase + 12, 'Gold', { fontSize: '10px', color: '#ffffff' });
 
-            // Gold label
-            this.add.text(x + 185, y + 12, 'Gold', {
-                fontSize: '10px',
+            // Player Inventory Icons Text
+            const inventoryText = this.add.text(x, yBase + 25, '', { // Positioned below health/gold
+                fontSize: '12px', // Slightly smaller for icons
                 color: '#ffffff'
             });
+            this.playerInventoryTexts.push(inventoryText);
         }
     }
 
@@ -499,14 +502,18 @@ class GameScene extends Phaser.Scene {
             const healthBar = this.healthBars[i];
             const goldBar = this.goldBars[i];
             const label = this.playerLabels[i];
+            const inventoryText = this.playerInventoryTexts[i];
+
+            const yBase = 30 + i * 50; // Must match createUI
 
             // Update health bar
             healthBar.clear();
             if (player.isAlive) {
                 const healthPercent = player.getHealthPercentage() / 100;
-                const color = healthPercent > 0.5 ? 0x00ff00 : healthPercent > 0.25 ? 0xffff00 : 0xff0000;
-                healthBar.fillStyle(color);
-                healthBar.fillRect(80, 30 + i * 35 + 2, 100 * healthPercent, 8);
+                const barColor = healthPercent > 0.5 ? 0x00ff00 : healthPercent > 0.25 ? 0xffff00 : 0xff0000;
+                healthBar.fillStyle(barColor);
+                // Adjusted y position to match new yBase
+                healthBar.fillRect(label.x + 80, yBase + 2, 100 * healthPercent, 8);
             }
 
             // Update gold bar
@@ -514,12 +521,24 @@ class GameScene extends Phaser.Scene {
             if (player.isAlive) {
                 const goldPercent = Math.min(player.getGold() / 20, 1); // Max display of 20 gold for scale
                 goldBar.fillStyle(0xffd700); // Gold color
-                goldBar.fillRect(80, 30 + i * 35 + 12, 100 * goldPercent, 8);
+                // Adjusted y position to match new yBase
+                goldBar.fillRect(label.x + 80, yBase + 12, 100 * goldPercent, 8);
+            }
+
+            // Update player inventory icons
+            if (player.isAlive) {
+                const inventoryIcons = player.inventory.map(item => item.icon).join(' ');
+                inventoryText.setText(inventoryIcons);
+                inventoryText.setVisible(true);
+            } else {
+                inventoryText.setVisible(false);
             }
 
             // Update label color based on player status
             if (!player.isAlive) {
                 label.setColor('#666666');
+            } else {
+                label.setColor('#ffffff'); // Ensure label is white if player is revived
             }
         }
     }
