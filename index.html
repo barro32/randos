@@ -193,7 +193,7 @@
         }
 
     </style>
-  <script type="module" crossorigin src="/randos/index.CmDJq6SO.js"></script>
+  <script type="module" crossorigin src="/randos/index.5x0qQQKH.js"></script>
 </head>
 <body>
     <h1>Randos Battle Arena</h1>
@@ -220,10 +220,11 @@
     <div id="gameContainer"></div>
 
     <div id="shopOverlay" class="hidden">
-        <h2>Shop</h2>
+        <h2 id="shopTitle">Shop</h2> <!-- Added id for dynamic title -->
         <div id="shopItems"></div>
         <div id="playerGoldDisplay">Player Gold: 0</div>
-        <p>Click "Next Round" (in game controls) when done shopping.</p>
+        <button id="finishShoppingButton">Finish Shopping</button> <!-- Added Finish Shopping button -->
+        <!-- Removed the "Next Round" message as it's now handled by Finish Shopping button -->
     </div>
 
 </body>
