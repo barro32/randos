@@ -3,6 +3,7 @@ import { BattleArenaGame, GameState } from './game'; // Import GameState
 class GameController {
     private game: BattleArenaGame | null = null;
     private playerCount: number = 2; // Default player count
+    private currentPlayerIndexForShop: number = 0; // Added for shopping turns
 
     // UI Elements
     private startButton: HTMLButtonElement;
@@ -35,6 +36,12 @@ class GameController {
         this.shopItemsContainer = document.getElementById('shopItems') as HTMLElement;
         this.playerGoldDisplayElement = document.getElementById('playerGoldDisplay') as HTMLElement;
 
+        // Add finishShoppingButton
+        const finishShoppingButton = document.getElementById('finishShoppingButton') as HTMLButtonElement;
+        if (finishShoppingButton) {
+            finishShoppingButton.addEventListener('click', () => this.finishShoppingTurn());
+        }
+
 
         this.initializeUIEventListeners();
         this.updateUIVisibility(GameState.Playing -1); // Initial UI state (pseudo-state for pre-game)
@@ -55,29 +62,9 @@ class GameController {
         // Modify nextRoundButton to handle player ready status
         this.nextRoundButton.addEventListener('click', () => {
             if (this.game && (this.game.getCurrentGameState() === GameState.RoundOver || this.game.getCurrentGameState() === GameState.Shop)) {
-                const alivePlayers = this.game.gameScene?.getAlivePlayers();
-                if (alivePlayers && alivePlayers.length > 0) {
-                    // Mark all currently alive players as ready.
-                    // playerReady internally calls nextRound, which will proceed if all are now ready.
-                    alivePlayers.forEach(player => {
-                        // Check if player object and id exist, and if game instance is still valid
-                        if (player && player.id && this.game) {
-                            this.game.playerReady(player.id);
-                        }
-                    });
-                    // The last call to playerReady for an alive player will trigger nextRound if all conditions are met.
-                    // If no players were alive, or if some edge case prevents nextRound from being called,
-                    // an explicit call might be considered, but playerReady should handle the transition.
-                } else {
-                    // If no players are alive (e.g. draw or all eliminated simultaneously)
-                    // still attempt to proceed to the next round or game over sequence.
-                    if (this.game) { // Ensure game instance is still valid
-                        this.game.nextRound();
-                    }
-                }
+                // Directly call nextRound as player readiness is now handled by completing shopping turns.
+                this.game.nextRound();
             }
-            // If the game is not in RoundOver or Shop state, this button conceptually does nothing,
-            // or it could be hidden/disabled by updateUIVisibility (which it is).
         });
     }
 
@@ -101,31 +88,70 @@ class GameController {
 
     private goToShop(): void {
         if (this.game) {
+            this.currentPlayerIndexForShop = 0; // Reset for the first player
             this.game.setCurrentGameState(GameState.Shop);
-            this.displayShopUI();
-            // updateUIVisibility will be called by updateGameStatus, which is called by setCurrentGameState
+            // displayShopUI will be called via updateUIVisibility -> updateGameStatus
+        }
+    }
+
+    private finishShoppingTurn(): void {
+        if (!this.game || this.game.getCurrentGameState() !== GameState.Shop) {
+            return;
+        }
+
+        const alivePlayers = this.game.gameScene?.getAlivePlayers() || [];
+        this.currentPlayerIndexForShop++;
+
+        if (this.currentPlayerIndexForShop < alivePlayers.length) {
+            this.displayShopUI(); // Show shop for the next player
+        } else {
+            // All players have shopped
+            this.shopOverlayElement.classList.add('hidden');
+            this.nextRoundButton.classList.remove('hidden'); // Enable Next Round button
+            // Optionally, inform the user that all players have finished shopping.
+            if (this.gameStatusElement) {
+                this.gameStatusElement.textContent = `All players finished shopping. Click "Next Round" to continue.`;
+            }
         }
     }
 
     private displayShopUI(): void {
-        if (!this.game || !this.game.shopInstance) {
+        if (!this.game || !this.game.shopInstance || !this.game.gameScene) {
             this.shopOverlayElement.classList.add('hidden');
             return;
         }
 
         const shop = this.game.shopInstance;
-        const items = shop.getAvailableItems(); // Need to add this method to Shop class
-        // For now, assume Player 1 is shopping. This needs to be dynamic for multi-player.
-        const currentPlayer = this.game.gameScene?.getAlivePlayers()[0];
+        const alivePlayers = this.game.gameScene.getAlivePlayers();
 
-        if (!currentPlayer) {
+        if (this.currentPlayerIndexForShop >= alivePlayers.length) {
+            // This case should ideally be handled by finishShoppingTurn,
+            // but as a safeguard, hide shop and show next round button.
+            this.shopOverlayElement.classList.add('hidden');
+            this.nextRoundButton.classList.remove('hidden');
+            if (this.gameStatusElement) {
+                 this.gameStatusElement.textContent = `All players finished shopping. Click "Next Round" to continue.`;
+            }
+            return;
+        }
+
+        const currentPlayer = alivePlayers[this.currentPlayerIndexForShop];
+        if (!currentPlayer) { // Should not happen if logic is correct
             this.shopOverlayElement.classList.add('hidden');
             return;
         }
 
-        this.playerGoldDisplayElement.textContent = `Player Gold: ${currentPlayer.getGold()}`;
+        // Update shop title for current player
+        const shopTitleElement = document.getElementById('shopTitle');
+        if (shopTitleElement) {
+            shopTitleElement.textContent = `${currentPlayer.id}'s Turn to Shop`;
+        }
+
+
+        this.playerGoldDisplayElement.textContent = `Gold: ${currentPlayer.getGold()}`;
         this.shopItemsContainer.innerHTML = ''; // Clear previous items
 
+        const items = shop.getAvailableItems();
         items.forEach((shopItem, index) => {
             if (shopItem.quantity > 0) {
                 const itemElement = document.createElement('div');
@@ -189,11 +215,12 @@ class GameController {
                     this.gameStatusElement.textContent = `Round ${roundNumber} - Fighting!`;
                     break;
                 case GameState.Shop:
-                    this.gameStatusElement.textContent = `Round ${roundNumber} - Shop Phase. Buy items! Click "Next Round" when ready.`;
-                    // Here you would also trigger the actual shop UI display within the Phaser canvas if needed
+                    // Message will be handled by displayShopUI for current player, or by finishShoppingTurn when all done.
+                    // this.gameStatusElement.textContent = `Round ${roundNumber} - Shop Phase.`;
+                    this.displayShopUI(); // This will set the player-specific message.
                     break;
                 case GameState.RoundOver:
-                    this.gameStatusElement.textContent = `Round ${roundNumber} Over! ${playersAlive} players survived. Click "Next Round" when ready.`;
+                    this.gameStatusElement.textContent = `Round ${roundNumber} Over! ${playersAlive} players survived. Choose to shop or start next round.`;
                     break;
                 // GameOver is handled by onGameEnd
             }
@@ -204,7 +231,7 @@ class GameController {
     private updateUIVisibility(gameState: GameState): void {
         // Default all to hidden or disabled, then enable based on state
         this.shopButton.classList.add('hidden');
-        this.nextRoundButton.classList.add('hidden');
+        this.nextRoundButton.classList.add('hidden'); // Initially hidden, shown after all players shop or if skipping shop
         this.startButton.classList.add('hidden');
         this.restartButton.classList.add('hidden');
         this.playerCountInput.disabled = true;
@@ -217,16 +244,16 @@ class GameController {
                 this.gameInfoElement.classList.remove('hidden');
                 break;
             case GameState.Shop:
-                this.gameInfoElement.classList.remove('hidden'); // Keep game info (like round, players alive) visible
-                this.shopOverlayElement.classList.remove('hidden'); // Show shop
-                this.displayShopUI(); // Refresh/display shop items
-                this.nextRoundButton.classList.remove('hidden'); // Option to proceed from shop
-                this.shopButton.classList.add('hidden'); // Hide "Go to Shop" button when already in shop
+                this.gameInfoElement.classList.remove('hidden');
+                this.shopOverlayElement.classList.remove('hidden');
+                // this.displayShopUI(); // Called by updateGameStatus -> leads to here.
+                // NextRoundButton is hidden until all players finish shopping (handled in finishShoppingTurn)
+                this.shopButton.classList.add('hidden');
                 break;
             case GameState.RoundOver:
                 this.gameInfoElement.classList.remove('hidden');
-                this.shopButton.classList.remove('hidden'); // Show "Go to Shop" button
-                this.nextRoundButton.classList.remove('hidden');
+                this.shopButton.classList.remove('hidden');
+                this.nextRoundButton.classList.remove('hidden'); // Can skip shop and go to next round
                 break;
             case GameState.GameOver:
                 this.gameInfoElement.classList.remove('hidden'); // Keep showing info like winner
