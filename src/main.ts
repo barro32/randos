@@ -107,11 +107,11 @@ class GameController {
         } else {
             // All players have shopped
             this.shopOverlayElement.classList.add('hidden');
-            this.nextRoundButton.classList.remove('hidden'); // Enable Next Round button
-            // Optionally, inform the user that all players have finished shopping.
+            // Automatically start the next round
             if (this.gameStatusElement) {
-                this.gameStatusElement.textContent = `All players finished shopping. Click "Next Round" to continue.`;
+                this.gameStatusElement.textContent = `All players finished shopping. Starting next round...`;
             }
+            this.startNextRound();
         }
     }
 
@@ -125,13 +125,11 @@ class GameController {
         const alivePlayers = this.game.gameScene.getAlivePlayers();
 
         if (this.currentPlayerIndexForShop >= alivePlayers.length) {
-            // This case should ideally be handled by finishShoppingTurn,
-            // but as a safeguard, hide shop and show next round button.
+            // This case should now be handled by finishShoppingTurn,
+            // which automatically starts the next round.
+            // If somehow reached, hide shop.
             this.shopOverlayElement.classList.add('hidden');
-            this.nextRoundButton.classList.remove('hidden');
-            if (this.gameStatusElement) {
-                 this.gameStatusElement.textContent = `All players finished shopping. Click "Next Round" to continue.`;
-            }
+            // No longer show "Next Round" button here as it's automatic.
             return;
         }
 
