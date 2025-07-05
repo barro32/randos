@@ -158,10 +158,26 @@ export class BattleArenaGame {
         this.currentGameState = newState;
 
         if (newState === GameState.Playing && oldState !== GameState.Playing) {
+            // If resuming from a state where scene might have been paused
+            if (this.gameScene.scene.isPaused('GameScene')) {
+                this.gameScene.scene.resume('GameScene');
+            }
             this.startRoundTimer();
+        } else if (newState === GameState.Shop) {
+            // Pause game scene when entering shop
+            if (this.gameScene.scene.isActive('GameScene') && !this.gameScene.scene.isPaused('GameScene')) {
+                this.gameScene.scene.pause('GameScene');
+            }
+            if (this.roundTimer) {
+                this.roundTimer.paused = true;
+            }
         } else if (newState !== GameState.Playing && this.roundTimer) {
-            // Stop timer if not in Playing state
+            // For other non-Playing states like RoundOver, GameOver, ensure timer is paused
+            // but don't necessarily pause the scene unless specified (e.g. Game Over might have animations)
             this.roundTimer.paused = true;
+            // If moving from Playing to RoundOver, we might want to keep scene active for a moment for effects,
+            // or explicitly pause it if needed. For now, just pausing timer.
+            // If it was Shop, scene is already paused. If it's RoundOver from Playing, scene remains active.
         }
 
 
