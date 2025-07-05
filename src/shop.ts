@@ -50,8 +50,12 @@ export class Shop {
         console.log("--------------------");
     }
 
-    public buyItem(player: Player, itemIndex: number): boolean {
-        const shopItem = this.availableItems[itemIndex -1]; // Adjust for 1-based indexing from display
+    public getAvailableItems(): { item: Item, quantity: number }[] {
+        return this.availableItems;
+    }
+
+    public buyItem(player: Player, itemArrayIndex: number): boolean { // Changed itemIndex to itemArrayIndex
+        const shopItem = this.availableItems[itemArrayIndex]; // Use 0-based index directly
 
         if (!shopItem || shopItem.quantity <= 0) {
             console.log("Invalid item selection or item out of stock.");
