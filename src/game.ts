@@ -22,7 +22,7 @@ export class BattleArenaGame {
     private roundTimer: Phaser.Time.TimerEvent | null = null;
     private roundDuration: number = 30000; // 30 seconds in milliseconds
     private remainingTime: number = 0; // Added to store remaining time
-    private readyPlayers: Set<string> = new Set(); // Set to store IDs of players who are ready
+    // private readyPlayers: Set<string> = new Set(); // Set to store IDs of players who are ready - No longer needed for this flow
 
     constructor(playerCount: number, updateCallback: (playersAlive: number, gameState: GameState, roundNumber: number, remainingTime: number) => void, gameEndCallback: (winner: string) => void) {
         this.updateCallback = updateCallback;
@@ -96,24 +96,15 @@ export class BattleArenaGame {
     }
 
     public nextRound(): void {
-        if (this.currentGameState === GameState.RoundOver || this.currentGameState === GameState.Shop) {
-            // Check if all remaining players are ready
-            const alivePlayerIds = this.gameScene.getAlivePlayers().map(p => p.id);
-            const allReady = alivePlayerIds.every(id => this.readyPlayers.has(id));
-
-            if (allReady || alivePlayerIds.length === 0) { // Proceed if all alive players are ready or no one is left to ready up
-                this.currentRound++;
-                this.setCurrentGameState(GameState.Playing);
-                this.gameScene.resetRound();
-                this.startRoundTimer();
-                this.readyPlayers.clear(); // Clear ready status for the new round
-                this.updateCallback(this.gameScene.getAlivePlayersCount(), this.currentGameState, this.currentRound, this.getRemainingTime());
-            } else {
-                // Notify UI that not all players are ready
-                console.log("Waiting for all players to ready up...");
-                // This message should ideally be shown in the game UI
-                this.updateCallback(this.gameScene.getAlivePlayersCount(), GameState.Shop, this.currentRound, this.getRemainingTime()); // Remain in shop/round over state
-            }
+        // Player readiness is now handled by the GameController's shopping turn logic.
+        // This function is called when the "Next Round" button is clicked after all players have shopped.
+        if (this.currentGameState === GameState.Shop || this.currentGameState === GameState.RoundOver) {
+            this.currentRound++;
+            this.setCurrentGameState(GameState.Playing);
+            this.gameScene.resetRound();
+            this.startRoundTimer();
+            // No need to clear readyPlayers here as it's no longer used for this flow.
+            this.updateCallback(this.gameScene.getAlivePlayersCount(), this.currentGameState, this.currentRound, this.getRemainingTime());
         }
     }
 
@@ -130,14 +121,15 @@ export class BattleArenaGame {
         return 0;
     }
 
-    public playerReady(playerId: string): void {
-        if (this.currentGameState === GameState.RoundOver || this.currentGameState === GameState.Shop) {
-            this.readyPlayers.add(playerId);
-            console.log(`${playerId} is ready.`);
-            // Optionally, attempt to start next round if all are now ready
-            this.nextRound();
-        }
-    }
+    // playerReady is no longer needed as the shopping phase completion gates the next round.
+    // public playerReady(playerId: string): void {
+    //     if (this.currentGameState === GameState.RoundOver || this.currentGameState === GameState.Shop) {
+    //         this.readyPlayers.add(playerId);
+    //         console.log(`${playerId} is ready.`);
+    //         // Optionally, attempt to start next round if all are now ready
+    //         this.nextRound();
+    //     }
+    // }
 
     private startRoundTimer(): void {
         if (this.roundTimer) {
