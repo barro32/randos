@@ -54,26 +54,30 @@ class GameController {
         this.shopButton.addEventListener('click', () => this.goToShop());
         // Modify nextRoundButton to handle player ready status
         this.nextRoundButton.addEventListener('click', () => {
-            // For simplicity, assume current player (e.g. Player 1) is readying up.
-            // In a real multiplayer setup, each player would have their own ready button.
-            // This needs a way to identify WHICH player is clicking ready.
-            // For now, let's assume a generic "ready up" that tries to advance the game.
-            // Or, if we need specific player IDs, the UI needs to be more complex.
-            // Let's make a conceptual simplification: clicking "Next Round" implies the "main" player is ready.
-            // And then it attempts to start the next round (which checks if all *other* alive players are ready).
-            // This part needs a more robust solution for multiple players readying up.
-            // A quick fix: assume one player is "Player 1" and they ready up.
-            if (this.game) {
-                 // Find an alive player to mark as ready. This is a placeholder for actual player input.
+            if (this.game && (this.game.getCurrentGameState() === GameState.RoundOver || this.game.getCurrentGameState() === GameState.Shop)) {
                 const alivePlayers = this.game.gameScene?.getAlivePlayers();
                 if (alivePlayers && alivePlayers.length > 0) {
-                     this.game.playerReady(alivePlayers[0].id); // Mark the first alive player as ready
+                    // Mark all currently alive players as ready.
+                    // playerReady internally calls nextRound, which will proceed if all are now ready.
+                    alivePlayers.forEach(player => {
+                        // Check if player object and id exist, and if game instance is still valid
+                        if (player && player.id && this.game) {
+                            this.game.playerReady(player.id);
+                        }
+                    });
+                    // The last call to playerReady for an alive player will trigger nextRound if all conditions are met.
+                    // If no players were alive, or if some edge case prevents nextRound from being called,
+                    // an explicit call might be considered, but playerReady should handle the transition.
                 } else {
-                    // If no players are alive, still try to proceed (e.g. if all died simultaneously)
-                    this.game.nextRound();
+                    // If no players are alive (e.g. draw or all eliminated simultaneously)
+                    // still attempt to proceed to the next round or game over sequence.
+                    if (this.game) { // Ensure game instance is still valid
+                        this.game.nextRound();
+                    }
                 }
             }
-            // this.startNextRound(); // Original call, now handled by playerReady potentially triggering nextRound
+            // If the game is not in RoundOver or Shop state, this button conceptually does nothing,
+            // or it could be hidden/disabled by updateUIVisibility (which it is).
         });
     }
 
