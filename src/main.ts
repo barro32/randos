@@ -145,8 +145,19 @@ class GameController {
             shopTitleElement.textContent = `${currentPlayer.id}'s Turn to Shop`;
         }
 
+        // Display Player Health, Gold, and Inventory
+        const playerInfoElement = document.getElementById('playerShopInfo'); // Assuming an element with this ID exists for this
+        if (playerInfoElement) {
+            const inventoryIcons = currentPlayer.inventory.map(item => item.icon).join(' ');
+            playerInfoElement.innerHTML = `
+                Health: ${currentPlayer.health}/${currentPlayer.maxHealth} | Gold: ${currentPlayer.getGold()}
+                <br>
+                Inventory: ${inventoryIcons || 'Empty'}
+            `;
+        }
 
-        this.playerGoldDisplayElement.textContent = `Gold: ${currentPlayer.getGold()}`;
+
+        this.playerGoldDisplayElement.textContent = `Gold: ${currentPlayer.getGold()}`; // This might be redundant if playerShopInfo is comprehensive
         this.shopItemsContainer.innerHTML = ''; // Clear previous items
 
         const items = shop.getAvailableItems();
@@ -157,8 +168,9 @@ class GameController {
 
                 const itemInfo = document.createElement('div');
                 itemInfo.classList.add('shop-item-info');
+                // Added item icon to the display
                 itemInfo.innerHTML = `
-                    <p><strong>${shopItem.item.name}</strong></p>
+                    <p><strong>${shopItem.item.icon} ${shopItem.item.name}</strong></p>
                     <p>${shopItem.item.description}</p>
                     <p>Cost: ${shopItem.item.cost} Gold | Qty: ${shopItem.quantity}</p>
                 `;
