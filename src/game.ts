@@ -212,10 +212,12 @@ class GameScene extends Phaser.Scene {
     private gameUpdateCallback: (playersAlive: number, roundOver: boolean) => void; // Changed signature
     private gameEndCallback: (winner: string) => void;
     private gameStateChangeCallback: (newState: GameState) => void; // Callback to change game state
-    private healthBars: Phaser.GameObjects.Graphics[] = [];
-    private goldBars: Phaser.GameObjects.Graphics[] = [];
-    private playerLabels: Phaser.GameObjects.Text[] = [];
-    private playerInventoryTexts: Phaser.GameObjects.Text[] = []; // Added for inventory icons
+    private playerUIContainers: Phaser.GameObjects.Container[] = []; // To hold UI elements for each player
+    private healthBars: Phaser.GameObjects.Graphics[] = []; // Still need to store these individually for updates
+    private playerLabels: Phaser.GameObjects.Text[] = []; // Still need to store these individually for updates
+    private playerInventoryTexts: Phaser.GameObjects.Text[] = []; // Still need to store these individually for updates
+    private goldBars: Phaser.GameObjects.Graphics[] = []; // Gold bars remain static
+
     private gameEnded: boolean = false;
     private roundOverFlag: boolean = false; // Renamed to avoid conflict, controls round logic within scene
 
@@ -479,89 +481,127 @@ class GameScene extends Phaser.Scene {
     }
 
     private createUI(): void {
-        // Create health bars, gold bars and labels for each player
+        const healthBarWidth = 60; // Adjusted width for pinned UI
+        const healthBarHeight = 8;
+        const uiElementOffset = 20; // Offset from player sprite center
+
+        // Create Pinned UI elements for each player (name, health, inventory)
         for (let i = 0; i < this.players.length; i++) {
             const player = this.players[i];
-            const x = 20;
-            const yBase = 30 + i * 50; // Increased spacing for inventory line
 
-            // Player label
-            const label = this.add.text(x, yBase, player.id, {
-                fontSize: '14px',
-                color: '#ffffff'
-            });
+            // UI Container for this player
+            // Position will be updated in updateUI to follow the player sprite
+            const uiContainer = this.add.container(player.sprite.x, player.sprite.y - uiElementOffset);
+            this.playerUIContainers.push(uiContainer);
+
+            // Player label (name) - position relative to container
+            const label = this.add.text(0, -uiElementOffset -10, player.id, { // Positioned above the sprite
+                fontSize: '12px',
+                color: '#ffffff',
+                align: 'center'
+            }).setOrigin(0.5, 0.5); // Center the text
+            uiContainer.add(label);
             this.playerLabels.push(label);
 
-            // Health bar background
+            // Health bar background - position relative to container
             const healthBarBg = this.add.graphics();
             healthBarBg.fillStyle(0x333333);
-            healthBarBg.fillRect(x + 80, yBase + 2, 100, 8);
-            // Health bar
+            healthBarBg.fillRect(-healthBarWidth / 2, -uiElementOffset +5 , healthBarWidth, healthBarHeight); // Centered below name
+            uiContainer.add(healthBarBg);
+
+            // Health bar (actual health) - position relative to container
             const healthBar = this.add.graphics();
+            uiContainer.add(healthBar);
             this.healthBars.push(healthBar);
+
+            // Player Inventory Icons Text - position relative to container
+            const inventoryText = this.add.text(0, -uiElementOffset + 18, '', { // Positioned below health bar
+                fontSize: '10px',
+                color: '#ffffff',
+                align: 'center'
+            }).setOrigin(0.5, 0.5); // Center the text
+            uiContainer.add(inventoryText);
+            this.playerInventoryTexts.push(inventoryText);
+        }
+
+        // Create static Gold Bars (not pinned to players)
+        for (let i = 0; i < this.players.length; i++) {
+            const player = this.players[i]; // Still need player for context if showing ID, or just use index
+            const x = 20; // Static X position for gold bars
+            const yBase = 30 + i * 25; // Static Y position, reduced spacing as other elements moved
 
             // Gold bar background
             const goldBarBg = this.add.graphics();
             goldBarBg.fillStyle(0x333333);
-            goldBarBg.fillRect(x + 80, yBase + 12, 100, 8);
+            // Simple label for which player this gold bar is for
+            this.add.text(x, yBase -15, player.id + " Gold:", { fontSize: '10px', color: '#FFD700' });
+            goldBarBg.fillRect(x, yBase, 100, 8); // Static position
+
             // Gold bar
             const goldBar = this.add.graphics();
-            this.goldBars.push(goldBar);
-            // Gold label text (static)
-            this.add.text(x + 185, yBase + 12, 'Gold', { fontSize: '10px', color: '#ffffff' });
-
-            // Player Inventory Icons Text
-            const inventoryText = this.add.text(x, yBase + 25, '', { // Positioned below health/gold
-                fontSize: '12px', // Slightly smaller for icons
-                color: '#ffffff'
-            });
-            this.playerInventoryTexts.push(inventoryText);
+            this.goldBars.push(goldBar); // Still store it for updates
+             // Gold amount text (static label, dynamic value updated in updateUI)
+            // this.add.text(x + 105, yBase, 'Gold', { fontSize: '10px', color: '#ffffff' }); // "Gold" text label
         }
     }
 
     private updateUI(): void {
+        const healthBarWidth = 60; // Must match createUI
+        const healthBarHeight = 8; // Must match createUI
+        const uiElementOffset = 20; // Must match createUI
+
+        // Update Pinned UI elements for each player
         for (let i = 0; i < this.players.length; i++) {
             const player = this.players[i];
+            const uiContainer = this.playerUIContainers[i];
             const healthBar = this.healthBars[i];
-            const goldBar = this.goldBars[i];
             const label = this.playerLabels[i];
             const inventoryText = this.playerInventoryTexts[i];
 
-            const yBase = 30 + i * 50; // Must match createUI
+            // Update container position to follow the player sprite
+            // Adjust Y to be slightly above the player's sprite center, providing more gap
+            uiContainer.setPosition(player.sprite.x, player.sprite.y - (player.sprite.height / 2) - 10);
 
-            // Update health bar
+
+            // Update health bar (already positioned relative to container)
             healthBar.clear();
             if (player.isAlive) {
                 const healthPercent = player.getHealthPercentage() / 100;
                 const barColor = healthPercent > 0.5 ? 0x00ff00 : healthPercent > 0.25 ? 0xffff00 : 0xff0000;
                 healthBar.fillStyle(barColor);
-                // Adjusted y position to match new yBase
-                healthBar.fillRect(label.x + 80, yBase + 2, 100 * healthPercent, 8);
+                healthBar.fillRect(-healthBarWidth / 2, -uiElementOffset + 5, healthBarWidth * healthPercent, healthBarHeight);
+                uiContainer.setVisible(true);
+            } else {
+                uiContainer.setVisible(false); // Hide all pinned UI if player is not alive
             }
 
-            // Update gold bar
-            goldBar.clear();
-            if (player.isAlive) {
-                const goldPercent = Math.min(player.getGold() / 20, 1); // Max display of 20 gold for scale
-                goldBar.fillStyle(0xffd700); // Gold color
-                // Adjusted y position to match new yBase
-                goldBar.fillRect(label.x + 80, yBase + 12, 100 * goldPercent, 8);
-            }
-
-            // Update player inventory icons
-            if (player.isAlive) {
+            // Update player inventory icons (already positioned relative to container)
+            if (player.isAlive) { // This check is somewhat redundant due to container visibility but good for clarity
                 const inventoryIcons = player.inventory.map(item => item.icon).join(' ');
                 inventoryText.setText(inventoryIcons);
-                inventoryText.setVisible(true);
-            } else {
-                inventoryText.setVisible(false);
             }
 
-            // Update label color based on player status
-            if (!player.isAlive) {
-                label.setColor('#666666');
-            } else {
-                label.setColor('#ffffff'); // Ensure label is white if player is revived
+            // Update label color based on player status (already positioned relative to container)
+            // This is handled by the container's visibility now. If needed, specific color changes can be added.
+            // if (!player.isAlive) {
+            //     label.setColor('#666666');
+            // } else {
+            //     label.setColor('#ffffff');
+            // }
+        }
+
+        // Update static Gold Bars
+        for (let i = 0; i < this.players.length; i++) {
+            const player = this.players[i];
+            const goldBar = this.goldBars[i];
+            const x = 20; // Static X, must match createUI
+            const yBase = 30 + i * 25; // Static Y, must match createUI
+
+            goldBar.clear();
+            if (player.isAlive) { // Optionally, hide gold bar if player is dead or show last known gold
+                const goldPercent = Math.min(player.getGold() / 20, 1); // Max display of 20 gold for scale
+                goldBar.fillStyle(0xffd700); // Gold color
+                goldBar.fillRect(x, yBase, 100 * goldPercent, 8); // Static position
             }
         }
     }
