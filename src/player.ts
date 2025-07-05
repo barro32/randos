@@ -8,11 +8,15 @@ export class Player {
     public isAlive: boolean = true;
     public id: string;
     public color: number;
+    public justDied: boolean = false; // Flag to indicate if player died in the current frame/update cycle
     private scene: Phaser.Scene;
     private moveSpeed: number = 50;
     private lastMoveTime: number = 0;
     private moveInterval: number = 1000; // Move every 1 second
     private direction: { x: number; y: number } = { x: 0, y: 0 };
+    public attackDamage: number = 15; // Base attack damage
+    public defense: number = 0; // Base defense
+    public goldPerHit: number = 1; // Base gold per hit
 
     constructor(scene: Phaser.Scene, x: number, y: number, id: string, color: number) {
         this.scene = scene;
@@ -57,7 +61,8 @@ export class Player {
     public takeDamage(amount: number): void {
         if (!this.isAlive) return;
 
-        this.health -= amount;
+        const actualDamage = Math.max(0, amount - this.defense); // Apply defense
+        this.health -= actualDamage;
         
         // Flash effect when taking damage
         this.scene.tweens.add({
@@ -76,6 +81,7 @@ export class Player {
 
     private die(): void {
         this.isAlive = false;
+        this.justDied = true; // Set flag when player dies
         
         // Visual death effect
         this.sprite.setFillStyle(0x666666);
@@ -111,6 +117,31 @@ export class Player {
 
     public addGold(amount: number): void {
         this.gold += amount;
+    }
+
+    public increaseDamage(amount: number): void {
+        this.attackDamage += amount;
+    }
+
+    public increaseDefense(amount: number): void {
+        this.defense += amount;
+    }
+
+    public increaseGoldPerHit(amount: number): void {
+        this.goldPerHit += amount;
+    }
+
+    public heal(amount: number): void {
+        this.health = Math.min(this.maxHealth, this.health + amount);
+    }
+
+    public increaseSpeed(amount: number): void {
+        this.moveSpeed += amount;
+    }
+
+    public increaseMaxHealth(amount: number): void {
+        this.maxHealth += amount;
+        this.health += amount; // Also increase current health by the same amount
     }
 
     public destroy(): void {
