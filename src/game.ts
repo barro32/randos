@@ -116,11 +116,11 @@ export class BattleArenaGame {
                 // This message should ideally be shown in the game UI
                 this.updateCallback(this.gameScene.getAlivePlayersCount(), GameState.Shop, this.currentRound, this.getRemainingTime()); // Remain in shop/round over state
             }
-
-    public getCurrentGameState(): GameState { // Added this method
-        return this.currentGameState;
-    }
         }
+    }
+
+    public getCurrentGameState(): GameState { // Added this method - MOVED
+        return this.currentGameState;
     }
 
     public getRemainingTime(): number {
