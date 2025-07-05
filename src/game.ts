@@ -119,12 +119,17 @@ export class BattleArenaGame {
         }
     }
 
+    public getCurrentGameState(): GameState { // Added this method - MOVED
+        return this.currentGameState;
+    }
+
     public getRemainingTime(): number {
-        if (this.roundTimer && this.currentGameState === GameState.Playing) {
+        if (this.roundTimer && this.currentGameState === GameState.Playing && this.roundTimer.getProgress() < 1) {
             // Calculate remaining time based on the timer's progress
             return Math.ceil((this.roundTimer.delay - this.roundTimer.getElapsed()) / 1000);
         }
-        return Math.ceil(this.roundDuration / 1000); // Return full duration if timer not active or not in playing state
+        // If not playing, or timer completed/not set, remaining time for the active round is 0
+        return 0;
     }
 
     public playerReady(playerId: string): void {
