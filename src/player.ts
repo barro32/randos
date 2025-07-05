@@ -9,6 +9,10 @@ export class Player {
     public id: string;
     public color: number;
     public justDied: boolean = false; // Flag to indicate if player died in the current frame/update cycle
+    public isInvulnerable: boolean = false;
+    private lastHitTime: number = 0;
+    private invulnerabilityDuration: number = 100; // 100ms
+
     private scene: Phaser.Scene;
     private moveSpeed: number = 50; // Base speed, actual speed can be modified by effects
     private lastMoveTime: number = 0;
@@ -32,7 +36,7 @@ export class Player {
         scene.physics.add.existing(this.sprite);
         const body = this.sprite.body as Phaser.Physics.Arcade.Body;
         body.setCollideWorldBounds(true);
-        body.setBounce(0.8);
+        body.setBounce(1); // Make player bounce with full force off walls
         
         // Initialize velocity with a random direction
         this.currentVelocity = new Phaser.Math.Vector2(Math.random() * 2 - 1, Math.random() * 2 - 1).normalize().scale(this.moveSpeed);
@@ -41,6 +45,12 @@ export class Player {
 
     public update(time: number): void {
         if (!this.isAlive) return;
+
+        // Handle invulnerability duration
+        if (this.isInvulnerable && time - this.lastHitTime > this.invulnerabilityDuration) {
+            this.isInvulnerable = false;
+            this.sprite.setAlpha(1); // Restore alpha if changed during invulnerability
+        }
 
         // Periodically adjust heading
         if (time - this.lastMoveTime > this.moveInterval) {
@@ -51,6 +61,13 @@ export class Player {
         // Apply velocity
         const body = this.sprite.body as Phaser.Physics.Arcade.Body;
         body.setVelocity(this.currentVelocity.x, this.currentVelocity.y);
+    }
+
+    public setInvulnerable(time: number): void {
+        this.isInvulnerable = true;
+        this.lastHitTime = time;
+        // Optional: visual feedback for invulnerability
+        this.sprite.setAlpha(0.7);
     }
 
     private setInitialVelocity(): void {
