@@ -69,6 +69,7 @@ export class Shop {
 
         player.addGold(-shopItem.item.cost); // Deduct gold
         shopItem.item.applyEffect(player);
+        player.inventory.push(shopItem.item); // Add item to player's inventory
         shopItem.quantity--;
 
         console.log(`${player.id} purchased ${shopItem.item.name}.`);

@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { Item } from './items'; // Import Item interface
 
 export class Player {
     public sprite: Phaser.GameObjects.Rectangle;
@@ -12,6 +13,7 @@ export class Player {
     public isInvulnerable: boolean = false;
     private lastHitTime: number = 0;
     private invulnerabilityDuration: number = 100; // 100ms
+    public inventory: Item[] = []; // Added inventory
 
     private scene: Phaser.Scene;
     private moveSpeed: number = 50; // Base speed, actual speed can be modified by effects
