@@ -7,56 +7,66 @@
     <style>
         body {
             margin: 0;
-            padding: 20px;
+            padding: 10px; /* Reduced padding for smaller screens */
             font-family: Arial, sans-serif;
             background-color: #2c3e50;
             color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            box-sizing: border-box;
         }
         
         h1 {
-            margin-bottom: 20px;
+            margin-bottom: 15px; /* Reduced margin */
             text-align: center;
+            font-size: 1.8em; /* Responsive font size */
         }
         
-        .menu {
+        .menu, .game-info {
             background-color: #34495e;
-            padding: 30px;
+            padding: 20px; /* Adjusted padding */
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px; /* Adjusted margin */
             text-align: center;
+            width: 90%; /* Make it responsive */
+            max-width: 500px; /* Max width for larger screens */
+            box-sizing: border-box;
         }
         
         .input-group {
-            margin: 20px 0;
+            margin: 15px 0; /* Adjusted margin */
         }
         
         label {
             display: block;
-            margin-bottom: 10px;
-            font-size: 18px;
+            margin-bottom: 8px; /* Adjusted margin */
+            font-size: 1em; /* Responsive font size */
         }
         
         input, button {
-            padding: 10px;
-            font-size: 16px;
+            padding: 12px; /* Adjusted padding */
+            font-size: 0.9em; /* Responsive font size */
             border: none;
             border-radius: 5px;
+            box-sizing: border-box;
         }
         
-        input {
-            width: 100px;
+        input[type="number"] {
+            width: 80px; /* Adjusted width */
             text-align: center;
+            margin: 0 auto 10px auto; /* Center input */
+            display: block;
         }
         
         button {
             background-color: #3498db;
             color: white;
             cursor: pointer;
-            padding: 15px 30px;
-            margin: 10px;
+            padding: 12px 20px; /* Adjusted padding */
+            margin: 5px; /* Adjusted margin */
+            min-width: 120px; /* Minimum width for buttons */
         }
         
         button:hover {
@@ -69,22 +79,121 @@
         }
         
         #gameContainer {
-            margin-top: 20px;
+            margin-top: 10px; /* Reduced margin */
+            width: 100%;
+            max-width: 400px; /* Max width for game, portrait friendly */
+            height: auto; /* Adjust height automatically */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #gameContainer canvas {
+            max-width: 100%;
+            max-height: 80vh; /* Limit canvas height */
+            object-fit: contain; /* Scale canvas while maintaining aspect ratio */
         }
         
         .hidden {
-            display: none;
+            display: none !important; /* Ensure hidden class works */
         }
         
-        .game-info {
-            background-color: #34495e;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 10px;
+        .game-info div { /* Spacing for items within game-info */
+            margin-bottom: 8px;
+        }
+        .game-info div:last-child {
+            margin-bottom: 0;
+        }
+
+        #gameControls button {
+            display: inline-block; /* Make buttons flow better */
+            margin: 5px;
+        }
+
+        /* Media query for smaller screens */
+        @media (max-width: 600px) {
+            body {
+                padding: 5px;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            .menu, .game-info {
+                padding: 15px;
+                width: 95%;
+            }
+            input, button {
+                font-size: 0.85em;
+                padding: 10px 15px;
+            }
+            button {
+                 min-width: 100px;
+            }
+            #gameContainer {
+                max-width: 95vw; /* Ensure it fits viewport width */
+            }
+        }
+
+        /* Shop Overlay Styles */
+        #shopOverlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(44, 62, 80, 0.95); /* Slightly transparent #2c3e50 */
+            padding: 25px;
+            border-radius: 10px;
+            border: 2px solid #ecf0f1;
+            z-index: 1000;
+            width: 80%;
+            max-width: 450px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
             text-align: center;
         }
+
+        #shopOverlay h2 {
+            margin-top: 0;
+            color: #e74c3c; /* Contrasting color for title */
+        }
+
+        #shopItems .shop-item {
+            background-color: #34495e;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #shopItems .shop-item-info {
+            text-align: left;
+        }
+        #shopItems .shop-item-info p {
+            margin: 2px 0;
+            font-size: 0.9em;
+        }
+
+        #shopItems .shop-item button {
+            background-color: #2ecc71; /* Green for buy buttons */
+            padding: 8px 12px;
+            font-size: 0.85em;
+        }
+        #shopItems .shop-item button:hover {
+            background-color: #27ae60;
+        }
+        #shopItems .shop-item button:disabled {
+            background-color: #95a5a6; /* Grey for disabled buy buttons */
+        }
+
+        #playerGoldDisplay {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #f1c40f; /* Gold color */
+        }
+
     </style>
-  <script type="module" crossorigin src="/randos/index.D5rbZjCT.js"></script>
+  <script type="module" crossorigin src="/randos/index.CnKsOrdw.js"></script>
 </head>
 <body>
     <h1>Randos Battle Arena</h1>
@@ -100,6 +209,7 @@
     <div id="gameInfo" class="game-info hidden">
         <div id="gameStatus">Game Status: N/A</div> <!-- Added for general status -->
         <div id="playersAlive">Players Alive: 0</div>
+        <div id="timer" class="hidden">Time: 0s</div> <!-- Added for countdown timer -->
         <div id="gameControls"> <!-- Added for new buttons -->
             <button id="shopButton" class="hidden">Go to Shop</button>
             <button id="nextRoundButton" class="hidden">Next Round</button>
@@ -108,5 +218,13 @@
     </div>
     
     <div id="gameContainer"></div>
+
+    <div id="shopOverlay" class="hidden">
+        <h2>Shop</h2>
+        <div id="shopItems"></div>
+        <div id="playerGoldDisplay">Player Gold: 0</div>
+        <p>Click "Next Round" (in game controls) when done shopping.</p>
+    </div>
+
 </body>
 </html>
