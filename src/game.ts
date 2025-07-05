@@ -12,19 +12,22 @@ export enum GameState {
 export class BattleArenaGame {
     private game: Phaser.Game;
     // private players: Player[] = []; // Managed by GameScene
-    private updateCallback: (playersAlive: number, gameState: GameState, roundNumber: number) => void;
+    // Adjusted updateCallback to include remainingTime
+    private updateCallback: (playersAlive: number, gameState: GameState, roundNumber: number, remainingTime: number) => void;
     private gameEndCallback: (winner: string) => void;
-    private gameScene: GameScene;
-    private shopInstance: Shop | null = null; // To hold the shop instance
+    public gameScene: GameScene; // Made public for GameController to access players
+    public shopInstance: Shop | null = null; // Made public for GameController
     private currentGameState: GameState = GameState.Playing;
     private currentRound: number = 1;
     private roundTimer: Phaser.Time.TimerEvent | null = null;
     private roundDuration: number = 30000; // 30 seconds in milliseconds
+    private remainingTime: number = 0; // Added to store remaining time
     private readyPlayers: Set<string> = new Set(); // Set to store IDs of players who are ready
 
-    constructor(playerCount: number, updateCallback: (playersAlive: number, gameState: GameState, roundNumber: number) => void, gameEndCallback: (winner: string) => void) {
+    constructor(playerCount: number, updateCallback: (playersAlive: number, gameState: GameState, roundNumber: number, remainingTime: number) => void, gameEndCallback: (winner: string) => void) {
         this.updateCallback = updateCallback;
         this.gameEndCallback = gameEndCallback;
+        this.remainingTime = this.roundDuration / 1000; // Initialize remainingTime
 
         // Pass a new callback to GameScene for state changes
         this.gameScene = new GameScene(
@@ -40,8 +43,13 @@ export class BattleArenaGame {
 
         const config: Phaser.Types.Core.GameConfig = {
             type: Phaser.AUTO,
-            width: 800,
-            height: 600,
+            // Adjusted to use window dimensions for responsiveness
+            width: window.innerWidth * 0.9 > 400 ? 400 : window.innerWidth * 0.9, // Max width of 400px or 90% of viewport
+            height: window.innerHeight * 0.6 > 533 ? 533 : window.innerHeight * 0.6, // Max height of 533px (maintaining 3:4 for 400 width) or 60% of viewport
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            },
             parent: 'gameContainer',
             backgroundColor: '#2c3e50',
             physics: {
@@ -68,7 +76,8 @@ export class BattleArenaGame {
             this.setCurrentGameState(GameState.RoundOver);
             // Potentially transition to shop or next round logic here
         }
-        this.updateCallback(playersAlive, this.currentGameState, this.currentRound);
+        // Pass remainingTime to the callback
+        this.updateCallback(playersAlive, this.currentGameState, this.currentRound, this.getRemainingTime());
     }
 
     private handleGameEnd(winner: string): void {
@@ -100,14 +109,22 @@ export class BattleArenaGame {
                 this.gameScene.resetRound();
                 this.startRoundTimer();
                 this.readyPlayers.clear(); // Clear ready status for the new round
-                this.updateCallback(this.gameScene.getAlivePlayersCount(), this.currentGameState, this.currentRound);
+                this.updateCallback(this.gameScene.getAlivePlayersCount(), this.currentGameState, this.currentRound, this.getRemainingTime());
             } else {
                 // Notify UI that not all players are ready
                 console.log("Waiting for all players to ready up...");
                 // This message should ideally be shown in the game UI
-                this.updateCallback(this.gameScene.getAlivePlayersCount(), GameState.Shop, this.currentRound); // Remain in shop/round over state
+                this.updateCallback(this.gameScene.getAlivePlayersCount(), GameState.Shop, this.currentRound, this.getRemainingTime()); // Remain in shop/round over state
             }
         }
+    }
+
+    public getRemainingTime(): number {
+        if (this.roundTimer && this.currentGameState === GameState.Playing) {
+            // Calculate remaining time based on the timer's progress
+            return Math.ceil((this.roundTimer.delay - this.roundTimer.getElapsed()) / 1000);
+        }
+        return Math.ceil(this.roundDuration / 1000); // Return full duration if timer not active or not in playing state
     }
 
     public playerReady(playerId: string): void {
@@ -136,7 +153,7 @@ export class BattleArenaGame {
             this.setCurrentGameState(GameState.RoundOver);
             // gameScene might need a method to pause players or similar
             this.gameScene.setRoundOver(true); // Notify scene that round is over by time
-            this.updateCallback(this.gameScene.getAlivePlayersCount(), this.currentGameState, this.currentRound);
+            this.updateCallback(this.gameScene.getAlivePlayersCount(), this.currentGameState, this.currentRound, 0); // Time is 0 when round ends by timer
         }
     }
 
@@ -159,18 +176,20 @@ export class BattleArenaGame {
                 this.shopInstance = new Shop(this.gameScene, playerCount);
                 this.shopInstance.restock(playerCount); // Restock shop at the beginning of shop phase
             }
-            this.shopInstance?.displayShop();
+            // this.shopInstance?.displayShop(); // Removed console log, UI handled by GameController
         }
-        this.updateCallback(this.gameScene?.getAlivePlayersCount() || 0, this.currentGameState, this.currentRound);
+        this.updateCallback(this.gameScene?.getAlivePlayersCount() || 0, this.currentGameState, this.currentRound, this.getRemainingTime());
     }
 
 
     // Method for player to buy an item, called from UI
-    public playerAttemptToBuyItem(player: Player, itemIndex: number): void {
+    public playerAttemptToBuyItem(player: Player, itemArrayIndex: number): void { // itemIndex changed to itemArrayIndex
         if (this.currentGameState === GameState.Shop && this.shopInstance) {
-            const bought = this.shopInstance.buyItem(player, itemIndex);
+            // itemArrayIndex is already the 0-based index from the UI display.
+            const bought = this.shopInstance.buyItem(player, itemArrayIndex);
             if (bought) {
                 // Optional: Update player-specific UI in GameScene if needed
+                // Also, the main UI (GameController) will refresh the shop display.
             }
         }
     }
@@ -207,18 +226,24 @@ class GameScene extends Phaser.Scene {
     }
 
     public create(): void {
+        const gameWidth = this.cameras.main.width;
+        const gameHeight = this.cameras.main.height;
+        const borderWidth = 4; // Thickness of the border
+        const margin = 20; // Margin from the edge of the game area
+
         // Create border around the game area
         const border = this.add.graphics();
-        border.lineStyle(4, 0xffffff);
-        border.strokeRect(20, 20, 760, 560);
+        border.lineStyle(borderWidth, 0xffffff);
+        border.strokeRect(margin, margin, gameWidth - 2 * margin, gameHeight - 2 * margin);
 
         // Generate distinct colors for players
         const colors = this.generatePlayerColors(this.playerCount);
 
-        // Create players at random positions
+        // Create players at random positions within the playable area
+        const spawnMargin = margin + borderWidth + 10; // Ensure players spawn inside the border + a little extra
         for (let i = 0; i < this.playerCount; i++) {
-            const x = Phaser.Math.Between(50, 750);
-            const y = Phaser.Math.Between(50, 550);
+            const x = Phaser.Math.Between(spawnMargin, gameWidth - spawnMargin);
+            const y = Phaser.Math.Between(spawnMargin, gameHeight - spawnMargin);
             const player = new Player(this, x, y, `Player ${i + 1}`, colors[i]);
             this.players.push(player);
         }
@@ -274,8 +299,14 @@ class GameScene extends Phaser.Scene {
 
             }
             // TODO: Reposition players
-            const x = Phaser.Math.Between(50, 750);
-            const y = Phaser.Math.Between(50, 550);
+            const gameWidth = this.cameras.main.width;
+            const gameHeight = this.cameras.main.height;
+            const borderWidth = 4;
+            const margin = 20;
+            const spawnMargin = margin + borderWidth + 10;
+
+            const x = Phaser.Math.Between(spawnMargin, gameWidth - spawnMargin);
+            const y = Phaser.Math.Between(spawnMargin, gameHeight - spawnMargin);
             p.sprite.setPosition(x,y);
             (p.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0,0);
         });
