@@ -247,12 +247,33 @@ class GameScene extends Phaser.Scene {
         border.lineStyle(borderWidth, 0xffffff);
         border.strokeRect(margin, margin, gameWidth - 2 * margin, gameHeight - 2 * margin);
 
+        // Set the physics world bounds to match the visual border
+        // The player sprites are 30x30, so their half-width/height is 15.
+        // The world bounds need to be inset by this amount from the visual border
+        // if we want the *edge* of the sprite to touch the visual border.
+        // However, setCollideWorldBounds already prevents the body's bounding box
+        // (which is the sprite itself for a rectangle) from exiting the world bounds.
+        // So, the world bounds should be set to the visual playable area.
+        const effectiveMarginX = margin + borderWidth;
+        const effectiveMarginY = margin + borderWidth;
+        const effectiveWidth = gameWidth - 2 * (margin + borderWidth);
+        const effectiveHeight = gameHeight - 2 * (margin + borderWidth);
+        this.physics.world.setBounds(effectiveMarginX, effectiveMarginY, effectiveWidth, effectiveHeight);
+
         // Generate distinct colors for players
         const colors = this.generatePlayerColors(this.playerCount);
 
         // Create players at random positions within the playable area
-        const spawnMargin = margin + borderWidth + 10; // Ensure players spawn inside the border + a little extra
+        // Player size is 30x30, so half-size is 15.
+        // spawnMargin is the minimum distance from the canvas edge to the player's center.
+        // It's calculated as outer margin + border thickness + player's half size.
+        const playerHalfSize = 15;
+        const spawnMargin = margin + borderWidth + playerHalfSize;
         for (let i = 0; i < this.playerCount; i++) {
+            // The random position for the player's center should be between:
+            // min: spawnMargin
+            // max: gameDimension - spawnMargin
+            // This ensures the player's bounding box is entirely within the spawnable area.
             const x = Phaser.Math.Between(spawnMargin, gameWidth - spawnMargin);
             const y = Phaser.Math.Between(spawnMargin, gameHeight - spawnMargin);
             const player = new Player(this, x, y, `Player ${i + 1}`, colors[i]);
@@ -323,9 +344,11 @@ class GameScene extends Phaser.Scene {
             // Reposition players
             const gameWidth = this.cameras.main.width;
             const gameHeight = this.cameras.main.height;
-            const borderWidth = 4;
-            const margin = 20;
-            const spawnMargin = margin + borderWidth + 10;
+            const borderWidth = 4; // Assuming this is consistent or accessible
+            const margin = 20;      // Assuming this is consistent or accessible
+            // Player size is 30x30, so half-size is 15.
+            const playerHalfSize = 15;
+            const spawnMargin = margin + borderWidth + playerHalfSize;
 
             const x = Phaser.Math.Between(spawnMargin, gameWidth - spawnMargin);
             const y = Phaser.Math.Between(spawnMargin, gameHeight - spawnMargin);
