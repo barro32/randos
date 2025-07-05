@@ -14,6 +14,10 @@ class GameController {
     private gameInfoElement: HTMLElement;
     private playersAliveElement: HTMLElement;
     private gameStatusElement: HTMLElement; // For general game status messages
+    private timerElement: HTMLElement; // Added for countdown timer
+    private shopOverlayElement: HTMLElement; // Added for shop overlay
+    private shopItemsContainer: HTMLElement; // Added for shop items
+    private playerGoldDisplayElement: HTMLElement; // Added for player gold in shop
 
     constructor() {
         // Assign UI elements
@@ -26,6 +30,11 @@ class GameController {
         this.gameInfoElement = document.getElementById('gameInfo') as HTMLElement;
         this.playersAliveElement = document.getElementById('playersAlive') as HTMLElement;
         this.gameStatusElement = document.getElementById('gameStatus') as HTMLElement; // Assign new status element
+        this.timerElement = document.getElementById('timer') as HTMLElement; // Assign timer element
+        this.shopOverlayElement = document.getElementById('shopOverlay') as HTMLElement;
+        this.shopItemsContainer = document.getElementById('shopItems') as HTMLElement;
+        this.playerGoldDisplayElement = document.getElementById('playerGoldDisplay') as HTMLElement;
+
 
         this.initializeUIEventListeners();
         this.updateUIVisibility(GameState.Playing -1); // Initial UI state (pseudo-state for pre-game)
@@ -89,9 +98,64 @@ class GameController {
     private goToShop(): void {
         if (this.game) {
             this.game.setCurrentGameState(GameState.Shop);
-            // updateUIVisibility will be called by updateGameStatus
+            this.displayShopUI();
+            // updateUIVisibility will be called by updateGameStatus, which is called by setCurrentGameState
         }
     }
+
+    private displayShopUI(): void {
+        if (!this.game || !this.game.shopInstance) {
+            this.shopOverlayElement.classList.add('hidden');
+            return;
+        }
+
+        const shop = this.game.shopInstance;
+        const items = shop.getAvailableItems(); // Need to add this method to Shop class
+        // For now, assume Player 1 is shopping. This needs to be dynamic for multi-player.
+        const currentPlayer = this.game.gameScene?.getAlivePlayers()[0];
+
+        if (!currentPlayer) {
+            this.shopOverlayElement.classList.add('hidden');
+            return;
+        }
+
+        this.playerGoldDisplayElement.textContent = `Player Gold: ${currentPlayer.getGold()}`;
+        this.shopItemsContainer.innerHTML = ''; // Clear previous items
+
+        items.forEach((shopItem, index) => {
+            if (shopItem.quantity > 0) {
+                const itemElement = document.createElement('div');
+                itemElement.classList.add('shop-item');
+
+                const itemInfo = document.createElement('div');
+                itemInfo.classList.add('shop-item-info');
+                itemInfo.innerHTML = `
+                    <p><strong>${shopItem.item.name}</strong></p>
+                    <p>${shopItem.item.description}</p>
+                    <p>Cost: ${shopItem.item.cost} Gold | Qty: ${shopItem.quantity}</p>
+                `;
+
+                const buyButton = document.createElement('button');
+                buyButton.textContent = 'Buy';
+                buyButton.disabled = currentPlayer.getGold() < shopItem.item.cost;
+                buyButton.onclick = () => {
+                    if (this.game) {
+                        // Pass the actual player object and item's original index (or unique ID)
+                        this.game.playerAttemptToBuyItem(currentPlayer, index); // Adjust index if needed by shop logic
+                        this.displayShopUI(); // Refresh shop UI
+                        // Potentially update player gold in main game UI as well if visible
+                    }
+                };
+
+                itemElement.appendChild(itemInfo);
+                itemElement.appendChild(buyButton);
+                this.shopItemsContainer.appendChild(itemElement);
+            }
+        });
+
+        this.shopOverlayElement.classList.remove('hidden');
+    }
+
 
     private startNextRound(): void {
         if (this.game) {
@@ -101,9 +165,18 @@ class GameController {
     }
 
     // Combined method to update game info and UI visibility based on game state
-    private updateGameStatus(playersAlive: number, gameState: GameState, roundNumber: number): void {
+    private updateGameStatus(playersAlive: number, gameState: GameState, roundNumber: number, remainingTime: number): void {
         if (this.playersAliveElement) {
             this.playersAliveElement.textContent = `Players Alive: ${playersAlive}`;
+        }
+
+        if (this.timerElement) {
+            if (gameState === GameState.Playing) {
+                this.timerElement.textContent = `Time: ${remainingTime}s`;
+                this.timerElement.classList.remove('hidden');
+            } else {
+                this.timerElement.classList.add('hidden');
+            }
         }
 
         if (this.gameStatusElement) { // Update general status message
@@ -133,19 +206,22 @@ class GameController {
         this.playerCountInput.disabled = true;
         this.menuElement.classList.add('hidden');
         this.gameInfoElement.classList.add('hidden');
+        this.shopOverlayElement.classList.add('hidden'); // Hide shop by default
 
         switch (gameState) {
             case GameState.Playing:
                 this.gameInfoElement.classList.remove('hidden');
                 break;
             case GameState.Shop:
-                this.gameInfoElement.classList.remove('hidden');
+                this.gameInfoElement.classList.remove('hidden'); // Keep game info (like round, players alive) visible
+                this.shopOverlayElement.classList.remove('hidden'); // Show shop
+                this.displayShopUI(); // Refresh/display shop items
                 this.nextRoundButton.classList.remove('hidden'); // Option to proceed from shop
-                // Potentially show "Leave Shop" or similar instead of generic next round
+                this.shopButton.classList.add('hidden'); // Hide "Go to Shop" button when already in shop
                 break;
             case GameState.RoundOver:
                 this.gameInfoElement.classList.remove('hidden');
-                this.shopButton.classList.remove('hidden');
+                this.shopButton.classList.remove('hidden'); // Show "Go to Shop" button
                 this.nextRoundButton.classList.remove('hidden');
                 break;
             case GameState.GameOver:

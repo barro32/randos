@@ -2,18 +2,19 @@ import * as Phaser from 'phaser';
 
 export class Player {
     public sprite: Phaser.GameObjects.Rectangle;
-    public health: number = 100;
-    public maxHealth: number = 100;
+    public health: number = 150; // Increased health
+    public maxHealth: number = 150; // Increased maxHealth
     public gold: number = 10;
     public isAlive: boolean = true;
     public id: string;
     public color: number;
     public justDied: boolean = false; // Flag to indicate if player died in the current frame/update cycle
     private scene: Phaser.Scene;
-    private moveSpeed: number = 50;
+    private moveSpeed: number = 50; // Base speed, actual speed can be modified by effects
     private lastMoveTime: number = 0;
-    private moveInterval: number = 1000; // Move every 1 second
-    private direction: { x: number; y: number } = { x: 0, y: 0 };
+    private moveInterval: number = 1000; // Interval to adjust heading
+    private currentVelocity: Phaser.Math.Vector2; // Stores current velocity vector
+    private maxTurnAngle: number = Math.PI / 4; // Max turn angle per adjustment (45 degrees)
     public attackDamage: number = 15; // Base attack damage
     public defense: number = 0; // Base defense
     public goldPerHit: number = 1; // Base gold per hit
@@ -33,29 +34,40 @@ export class Player {
         body.setCollideWorldBounds(true);
         body.setBounce(0.8);
         
-        // Set initial random direction
-        this.setRandomDirection();
+        // Initialize velocity with a random direction
+        this.currentVelocity = new Phaser.Math.Vector2(Math.random() * 2 - 1, Math.random() * 2 - 1).normalize().scale(this.moveSpeed);
+        this.setInitialVelocity();
     }
 
     public update(time: number): void {
         if (!this.isAlive) return;
 
-        // Change direction periodically
+        // Periodically adjust heading
         if (time - this.lastMoveTime > this.moveInterval) {
-            this.setRandomDirection();
+            this.adjustHeading();
             this.lastMoveTime = time;
         }
 
-        // Move the player
+        // Apply velocity
         const body = this.sprite.body as Phaser.Physics.Arcade.Body;
-        body.setVelocity(this.direction.x * this.moveSpeed, this.direction.y * this.moveSpeed);
+        body.setVelocity(this.currentVelocity.x, this.currentVelocity.y);
     }
 
-    private setRandomDirection(): void {
-        // Generate random direction
-        const angle = Math.random() * Math.PI * 2;
-        this.direction.x = Math.cos(angle);
-        this.direction.y = Math.sin(angle);
+    private setInitialVelocity(): void {
+        const initialAngle = Math.random() * Math.PI * 2;
+        this.currentVelocity.setToPolar(initialAngle, this.moveSpeed);
+    }
+
+    private adjustHeading(): void {
+        // Get current angle
+        let currentAngle = this.currentVelocity.angle();
+
+        // Add a random adjustment within maxTurnAngle
+        const turnAdjustment = (Math.random() * 2 - 1) * this.maxTurnAngle;
+        currentAngle += turnAdjustment;
+
+        // Set new velocity based on the adjusted angle and current speed
+        this.currentVelocity.setToPolar(currentAngle, this.moveSpeed);
     }
 
     public takeDamage(amount: number): void {
@@ -137,6 +149,8 @@ export class Player {
 
     public increaseSpeed(amount: number): void {
         this.moveSpeed += amount;
+        // Update the magnitude of the current velocity vector to reflect the new speed
+        this.currentVelocity.normalize().scale(this.moveSpeed);
     }
 
     public increaseMaxHealth(amount: number): void {
