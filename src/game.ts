@@ -17,7 +17,7 @@ export class BattleArenaGame {
     private gameEndCallback: (winner: string) => void;
     public gameScene: GameScene; // Made public for GameController to access players
     public shopInstance: Shop | null = null; // Made public for GameController
-    private currentGameState: GameState = GameState.Playing;
+    private currentGameState: GameState = GameState.RoundOver; // Changed initial state
     private currentRound: number = 1;
     private roundTimer: Phaser.Time.TimerEvent | null = null;
     private roundDuration: number = 30000; // 30 seconds in milliseconds
