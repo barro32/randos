@@ -71,31 +71,29 @@ export class BattleArenaGame {
         }
     }
 
-    private handleGameUpdate(playersAlive: number, roundOver: boolean): void {
-        if (roundOver && this.currentGameState === GameState.Playing) {
+    private handleGameUpdate(playersAlive: number, roundShouldEnd: boolean): void {
+        // If roundShouldEnd is true (due to elimination or timer flag from scene)
+        // AND we are currently in the Playing state, then transition to RoundOver.
+        if (roundShouldEnd && this.currentGameState === GameState.Playing) {
             this.setCurrentGameState(GameState.RoundOver);
-            // Potentially transition to shop or next round logic here
+            // setCurrentGameState will call updateCallback, so no need to call it again here for this case.
+        } else {
+            // Otherwise (e.g., regular update during Playing, or game is not in Playing state,
+            // or roundShouldEnd is false), just call the updateCallback to refresh UI (like timer).
+            this.updateCallback(playersAlive, this.currentGameState, this.currentRound, this.getRemainingTime());
         }
-        // Pass remainingTime to the callback
-        this.updateCallback(playersAlive, this.currentGameState, this.currentRound, this.getRemainingTime());
     }
 
     private handleGameEnd(winner: string): void {
-        this.setCurrentGameState(GameState.GameOver);
-        this.gameEndCallback(winner);
+        // Note: setCurrentGameState(GameState.GameOver) is typically called by GameScene.checkWinCondition
+        // which then calls this.gameEndCallback.
+        // So, this function is more of a reaction to the state already being set.
+        // However, if there's a direct call to gameEnd, ensuring state is correct is good.
+        if (this.currentGameState !== GameState.GameOver) {
+            this.setCurrentGameState(GameState.GameOver);
+        }
+        this.gameEndCallback(winner); // Inform the UI/controller about the winner
     }
-
-    // public setCurrentGameState(newState: GameState): void { // Simpler version REMOVED
-    //     this.currentGameState = newState;
-    //     if (this.currentGameState === GameState.Shop) {
-    //         if (!this.shopInstance && this.gameScene) {
-    //             const playerCount = this.gameScene.getPlayerCount();
-    //             this.shopInstance = new Shop(this.gameScene, playerCount);
-    //         }
-    //         this.shopInstance?.displayShop();
-    //     }
-    //     this.updateCallback(this.gameScene?.getAlivePlayersCount() || 0, this.currentGameState, this.currentRound);
-    // }
 
     public nextRound(): void {
         if (this.currentGameState === GameState.RoundOver || this.currentGameState === GameState.Shop) {
@@ -274,36 +272,47 @@ class GameScene extends Phaser.Scene {
     }
 
     public update(time: number): void {
-        // if (this.gameEnded || this.roundOverFlag) return; // Pauses updates if round/game is over
-        // Allow player updates for movement effects even if round is over, but not combat logic
-
         this.players.forEach(player => player.update(time));
         this.updateUI();
 
-        if (!this.gameEnded && !this.roundOverFlag) {
-            // Check win/round end condition only if game and round are active
-            this.checkRoundOrWinCondition();
+        if (!this.gameEnded) {
+            const aliveCount = this.getAlivePlayersCount();
+            let playerWasEliminatedThisFrame = this.players.some(p => p.justDied);
+
+            // Always call gameUpdateCallback. BattleArenaGame will use its state to determine if timer should be shown.
+            // Pass true for roundOver if an elimination occurred or if timer flag is set.
+            this.gameUpdateCallback(aliveCount, this.roundOverFlag || playerWasEliminatedThisFrame);
+
+            if (playerWasEliminatedThisFrame) {
+                // Reset flag after checking and sending update, so it's only processed once per elimination event.
+                this.players.forEach(p => {
+                    if (p.justDied) p.justDied = false;
+                });
+            }
+
+            // checkWinCondition is primarily for game over.
+            // Round over by elimination is handled by BattleArenaGame.handleGameUpdate based on the 'true' passed in gameUpdateCallback.
+            // roundOverFlag is set by timer ending, which also triggers a state change via setRoundOver -> gameStateChangeCallback.
+            if (!this.roundOverFlag && !playerWasEliminatedThisFrame) { // Avoid redundant checks if round is already ending
+                 this.checkWinCondition();
+            }
         }
     }
 
     public resetRound(): void {
         this.roundOverFlag = false;
-        // Reset players (health, position, etc.)
-        // For now, just re-activate them if they died in a previous round (if game is not over)
         this.players.forEach(p => {
-            if (!p.isAlive && this.getAlivePlayersCount() > 1) { // Don't revive if it's game over
-                // This logic needs refinement based on how rounds progress (e.g. full heal, reset pos)
-                // For now, let's assume a simple heal and re-activation
-                p.heal(p.maxHealth);
-                p.isAlive = true;
-                p.sprite.setActive(true).setVisible(true);
-                 // Reset visual state from die()
-                p.sprite.setFillStyle(p.color);
-                p.sprite.setAlpha(1);
-                p.sprite.setScale(1);
+            // Revive player if they were dead and it's not game over (more than 1 player to start with)
+            // or if only one player remains (they won the game but we are resetting for a new game structure if any)
+            // For now, assume reset means full health, reset position for all.
+            p.heal(p.maxHealth); // Heal to full
+            p.isAlive = true;    // Mark as alive
+            p.sprite.setActive(true).setVisible(true);
+            p.sprite.setFillStyle(p.color); // Restore original color
+            p.sprite.setAlpha(1);           // Restore alpha
+            p.sprite.setScale(1);           // Restore scale
 
-            }
-            // TODO: Reposition players
+            // Reposition players
             const gameWidth = this.cameras.main.width;
             const gameHeight = this.cameras.main.height;
             const borderWidth = 4;
@@ -312,37 +321,38 @@ class GameScene extends Phaser.Scene {
 
             const x = Phaser.Math.Between(spawnMargin, gameWidth - spawnMargin);
             const y = Phaser.Math.Between(spawnMargin, gameHeight - spawnMargin);
-            p.sprite.setPosition(x,y);
-            (p.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0,0);
+            p.sprite.setPosition(x, y);
+            (p.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0); // Reset velocity
         });
 
-        this.gameUpdateCallback(this.getAlivePlayersCount(), false);
+        this.gameUpdateCallback(this.getAlivePlayersCount(), false); // Notify that round is reset
     }
 
     public getPlayerCount(): number {
         return this.playerCount;
     }
 
-    public getAlivePlayersCount(): number { // Made public for BattleArenaGame access
+    public getAlivePlayersCount(): number {
         return this.players.filter(player => player.isAlive).length;
     }
 
-    public getAlivePlayers(): Player[] { // Added to get actual player objects
+    public getAlivePlayers(): Player[] {
         return this.players.filter(player => player.isAlive);
     }
 
-    public setRoundOver(isOver: boolean): void { // Method to signal round over from BattleArenaGame (timer)
+    public setRoundOver(isOver: boolean): void {
         this.roundOverFlag = isOver;
         if (isOver) {
-            // Optionally pause player movements or actions here if needed
             this.players.forEach(p => {
-                if (p.sprite.body) { // Check if body exists
-                    (p.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0,0); // Stop movement
+                if (p.sprite.body) {
+                    (p.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0,0);
                 }
             });
+            // Inform BattleArenaGame to change the state to RoundOver.
+            // This will then trigger the main updateCallback with correct state and time.
+            this.gameStateChangeCallback(GameState.RoundOver);
         }
     }
-
 
     private generatePlayerColors(count: number): number[] {
         const colors = [
@@ -361,48 +371,71 @@ class GameScene extends Phaser.Scene {
     private handlePlayerCollision(player1: Player, player2: Player): void {
         if (!player1.isAlive || !player2.isAlive) return;
 
-        // Determine who is the attacker based on velocity (speed)
         const body1 = player1.sprite.body as Phaser.Physics.Arcade.Body;
         const body2 = player2.sprite.body as Phaser.Physics.Arcade.Body;
-        
-        const speed1 = Math.sqrt(body1.velocity.x ** 2 + body1.velocity.y ** 2);
-        const speed2 = Math.sqrt(body2.velocity.x ** 2 + body2.velocity.y ** 2);
-        
-        let attacker: Player, victim: Player;
-        if (speed1 > speed2) {
-            attacker = player1;
-            victim = player2;
-        } else if (speed2 > speed1) {
-            attacker = player2;
-            victim = player1;
-        } else {
-            // If speeds are equal, randomly choose attacker
-            if (Math.random() < 0.5) {
+
+        // Apply damage and effects only if neither player is invulnerable from this collision event
+        // Or if this specific pair hasn't just become invulnerable from each other.
+        // For simplicity, a global invulnerability flag is used.
+        if (!player1.isInvulnerable && !player2.isInvulnerable) {
+            // Determine who is the attacker based on velocity (speed)
+            const speed1 = Math.sqrt(body1.velocity.x ** 2 + body1.velocity.y ** 2);
+            const speed2 = Math.sqrt(body2.velocity.x ** 2 + body2.velocity.y ** 2);
+
+            let attacker: Player, victim: Player;
+            if (speed1 > speed2) {
                 attacker = player1;
                 victim = player2;
-            } else {
+            } else if (speed2 > speed1) {
                 attacker = player2;
                 victim = player1;
+            } else {
+                // If speeds are equal, or both are very slow, they both take some impact
+                // For simplicity, let's stick to the random attacker if speeds are equal.
+                if (Math.random() < 0.5) {
+                    attacker = player1;
+                    victim = player2;
+                } else {
+                    attacker = player2;
+                    victim = player1;
+                }
             }
+
+            // Attacker steals gold from victim based on attacker's goldPerHit
+            const stolenGold = victim.stealGold(attacker.goldPerHit);
+            attacker.addGold(stolenGold);
+
+            // Both players take damage from each other.
+            player1.takeDamage(player2.attackDamage);
+            // Check if player1 died before player2 takes damage or vice-versa, to avoid errors if sprite/body is gone
+            if (player1.isAlive) {
+                player2.takeDamage(player1.attackDamage);
+            }
+
+            // Set both players invulnerable for a short duration
+            const currentTime = this.time.now;
+            player1.setInvulnerable(currentTime);
+            player2.setInvulnerable(currentTime);
         }
 
-        // Attacker steals gold from victim based on attacker's goldPerHit
-        const stolenGold = victim.stealGold(attacker.goldPerHit);
-        attacker.addGold(stolenGold);
-
-        // Both players take damage based on their attackDamage
-        // For simplicity in this collision, we'll have them damage each other
-        // If only the attacker should deal damage, this logic needs adjustment
-        player1.takeDamage(player2.attackDamage);
-        player2.takeDamage(player1.attackDamage);
-
-
-        // Push players apart to prevent stuck collision
+        // Push players apart to prevent them from getting stuck and to simulate a bounce.
+        // This bounce effect happens regardless of invulnerability status.
         const angle = Phaser.Math.Angle.Between(player1.sprite.x, player1.sprite.y, player2.sprite.x, player2.sprite.y);
-        const force = 100;
+        const force = 100; // This force determines how strongly they are pushed apart.
+                           // Player's setBounce(1) will also contribute if this push isn't too overwhelming.
         
+        // Apply an immediate push-back velocity.
+        // Normalize the current velocities to ensure the push isn't additive in a weird way if they are already moving fast.
+        // Or, simply override velocity for a consistent push-back.
         body1.setVelocity(-Math.cos(angle) * force, -Math.sin(angle) * force);
         body2.setVelocity(Math.cos(angle) * force, Math.sin(angle) * force);
+
+        // Additionally, ensure Phaser's own bounce mechanics can work if desired.
+        // The bodies already have bounce set to 1. The collider should handle separation.
+        // The manual setVelocity above gives a more direct "explosion" like separation.
+        // If we want Phaser's physics to handle more of the bounce, we might reduce the manual force
+        // or rely on `body.setBounce(1)` and the physics engine's collision resolution.
+        // For now, the explicit push is kept.
     }
 
     private createUI(): void {
@@ -475,98 +508,21 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    // private getAlivePlayersCount(): number { // Now public
-    //     return this.players.filter(player => player.isAlive).length;
-    // }
-
-    private checkRoundOrWinCondition(): void { // Renamed and logic adjusted
+    // Renamed from checkRoundOrWinCondition - only checks for overall game win condition.
+    // Round ending by elimination or timer is handled by BattleArenaGame based on signals from GameScene.
+    private checkWinCondition(): void {
         const alivePlayers = this.players.filter(player => player.isAlive);
         const aliveCount = alivePlayers.length;
-        
-        this.gameUpdateCallback(aliveCount, false); // Regular update
 
         // Check for game over (overall win condition)
-        if (aliveCount <= 1 && this.playerCount > 1 && !this.gameEnded) {
+        // Considers playerCount > 0 to support potential single player modes later, though current setup is 2+
+        if (aliveCount <= 1 && this.playerCount > 0 && !this.gameEnded) {
             this.gameEnded = true;
-            this.roundOverFlag = true; // Current round also ends
+            // gameEndCallback will be called by BattleArenaGame when it processes the GameOver state.
             this.gameEndCallback(aliveCount === 1 ? alivePlayers[0].id : "No one (Draw)");
+            // This call will lead to BattleArenaGame.setCurrentGameState(GameState.GameOver),
+            // which then calls the UI updateCallback.
             this.gameStateChangeCallback(GameState.GameOver);
-            return; // Exit if game is over
-        }
-
-        // If not game over, check if a player was eliminated to potentially end the round
-        // This relies on the fact that checkRoundOrWinCondition is called in update loop.
-        // If a player is defeated, aliveCount will decrease.
-        // We need to compare with previous alive count or number of players at round start.
-        // For simplicity, if a player is knocked out and it's not game over, we can consider it a round end.
-        // This is a placeholder for more specific round end conditions.
-        // The timer in BattleArenaGame is the primary mechanism for ending rounds.
-        // This local check can supplement it, e.g. if all but one eliminated before timer.
-
-        // Let's refine: if the number of alive players is less than it was at the start of this check,
-        // AND the game is not over, it implies someone was just defeated.
-        // This is tricky to manage without storing previous state within this function.
-        // The gameUpdateCallback(aliveCount, this.roundOverFlag) is called.
-        // The BattleArenaGame class can then decide if this constitutes a round end.
-
-        // For now, this function primarily signals game over. Round over due to player elimination
-        // before timer is implicitly handled: if aliveCount drops, BattleArenaGame will be notified.
-        // If it drops to 1 or 0, it's game over. If it drops but >1, BattleArenaGame can decide
-        // if that means round over (e.g., if only one team left in a team game).
-        // With the current timer implementation, this function mainly handles the GAME OVER condition.
-        // Round Over by player elimination (not timer) is when aliveCount changes and it's not GameOver.
-        // The `gameUpdateCallback(aliveCount, this.roundOverFlag)` will inform BattleArenaGame.
-        // If BattleArenaGame sees aliveCount change and state is Playing, it can transition to RoundOver.
-        // This is what `handleGameUpdate` in `BattleArenaGame` is for.
-        // So, this function in GameScene doesn't need to explicitly set roundOverFlag for this case.
-        // It sets roundOverFlag when the *timer* ends the round (via setRoundOver method).
-
-        // No, this is simpler: if any player is eliminated and it's not game over, then the round should end.
-        // This means if an elimination happens, we transition to RoundOver state.
-        // The check for this should be after player collisions and damage application.
-        const previousAliveCount = this.players.length; // Assuming players array isn't changed mid-round
-                                                    // This is not good. Need a snapshot at round start.
-                                                    // Or, more simply: if a player's health dropped to 0 this frame.
-        // This is already implicitly handled by gameUpdateCallback. If aliveCount changes,
-        // handleGameUpdate in BattleArenaGame will be called. If it's not a game-ending change,
-        // it can decide to set state to RoundOver.
-
-        // The main responsibility here is to call gameUpdateCallback.
-        // If aliveCount drops to 1 or 0 --> game over.
-        // If aliveCount drops but still > 1 --> gameUpdateCallback is called, BattleArenaGame
-        // via handleGameUpdate can then set state to RoundOver. This is the current logic.
-        // This means this.roundOverFlag is primarily for timer-based round end.
-
-        // Let's ensure checkRoundOrWinCondition correctly signals to BattleArenaGame
-        // when players are eliminated but the game isn't over.
-        // The current call `this.gameUpdateCallback(aliveCount, false);` (if not game over)
-        // correctly informs BattleArenaGame. BattleArenaGame's `handleGameUpdate`
-        // then transitions to `GameState.RoundOver` if `roundOver` (which means a player was eliminated)
-        // is true (passed from here based on some condition).
-
-        // The `roundOver` parameter in `gameUpdateCallback(aliveCount, roundOver)`
-        // should be true if this check determines the round is over (e.g. player eliminated).
-        let wasPlayerEliminatedThisFrame = this.players.some(p => p.justDied);
-        if (wasPlayerEliminatedThisFrame) {
-            this.players.forEach(p => p.justDied = false); // Reset flag
-        }
-
-
-        // Simpler: if aliveCount < number of players who started the round alive, and not game over.
-        // For now, the existing logic where BattleArenaGame.handleGameUpdate transitions based on
-        // alive player count changes is sufficient for player elimination ending a round.
-        // This function (checkRoundOrWinCondition) primarily handles the GAME OVER state.
-        // The roundOverFlag here is for when the timer ends the round.
-        if (this.roundOverFlag && !this.gameEnded) { // If round ended by timer
-             this.gameStateChangeCallback(GameState.RoundOver);
-             return; // Return if round ended by timer
-        }
-
-        // If a player was eliminated this frame and it's not game over, it's a round end.
-        if (wasPlayerEliminatedThisFrame && !this.gameEnded) {
-            this.roundOverFlag = true; // Mark round as over due to elimination
-            this.gameUpdateCallback(aliveCount, true); // Signal that round is over
-            this.gameStateChangeCallback(GameState.RoundOver); // Change state
         }
     }
 }
