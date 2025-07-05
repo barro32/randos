@@ -37,10 +37,22 @@ export class Player {
         const body = this.sprite.body as Phaser.Physics.Arcade.Body;
         body.setCollideWorldBounds(true);
         body.setBounce(1); // Make player bounce with full force off walls
+        body.onWorldBounds = true; // Enable world bounds collision event
         
         // Initialize velocity with a random direction
         this.currentVelocity = new Phaser.Math.Vector2(Math.random() * 2 - 1, Math.random() * 2 - 1).normalize().scale(this.moveSpeed);
         this.setInitialVelocity();
+
+        // Listen for world bounds collision event
+        this.scene.physics.world.on('worldbounds', this.handleWorldBoundsCollision, this);
+    }
+
+    private handleWorldBoundsCollision(body: Phaser.Physics.Arcade.Body): void {
+        // Check if the collided body belongs to this player
+        if (body === this.sprite.body) {
+            // Update currentVelocity to reflect the bounce
+            this.currentVelocity.set(body.velocity.x, body.velocity.y);
+        }
     }
 
     public update(time: number): void {
@@ -53,14 +65,37 @@ export class Player {
         }
 
         // Periodically adjust heading
+        // Only adjust heading if not recently bounced, to allow bounce to complete
         if (time - this.lastMoveTime > this.moveInterval) {
-            this.adjustHeading();
+            // If player is moving very slowly (e.g. after a bounce slightly misaligned),
+            // give it a nudge to prevent getting stuck near walls.
+            const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+            if (body.velocity.lengthSq() < (this.moveSpeed * 0.1) ** 2 && this.isAlive) {
+                this.setInitialVelocity(); // Give a new random direction
+            } else {
+                this.adjustHeading();
+            }
             this.lastMoveTime = time;
         }
 
-        // Apply velocity
+        // Apply velocity based on currentVelocity
+        // currentVelocity is now updated by handleWorldBoundsCollision upon wall bounce
         const body = this.sprite.body as Phaser.Physics.Arcade.Body;
         body.setVelocity(this.currentVelocity.x, this.currentVelocity.y);
+
+        // Ensure the speed is maintained after potential adjustments or bounces
+        // This can be problematic if Phaser's bounce doesn't perfectly preserve speed,
+        // or if we want more controlled bounce speed.
+        // For now, let's re-normalize and scale currentVelocity to maintain moveSpeed.
+        // This needs to be done carefully. If a bounce just happened, body.velocity is Phaser's bounce.
+        // If we immediately normalize and scale, we might alter the bounce effect slightly.
+        // The currentVelocity is updated from body.velocity in handleWorldBoundsCollision.
+        // Then adjustHeading might change it. Then we set it.
+        // Let's ensure moveSpeed is respected after adjustHeading.
+        this.currentVelocity.normalize().scale(this.moveSpeed);
+        body.setVelocity(this.currentVelocity.x, this.currentVelocity.y);
+
+
     }
 
     public setInvulnerable(time: number): void {
