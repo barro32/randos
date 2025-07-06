@@ -121,16 +121,6 @@ export class BattleArenaGame {
         return 0;
     }
 
-    // playerReady is no longer needed as the shopping phase completion gates the next round.
-    // public playerReady(playerId: string): void {
-    //     if (this.currentGameState === GameState.RoundOver || this.currentGameState === GameState.Shop) {
-    //         this.readyPlayers.add(playerId);
-    //         console.log(`${playerId} is ready.`);
-    //         // Optionally, attempt to start next round if all are now ready
-    //         this.nextRound();
-    //     }
-    // }
-
     private startRoundTimer(): void {
         if (this.roundTimer) {
             this.roundTimer.remove(false);
@@ -216,7 +206,6 @@ class GameScene extends Phaser.Scene {
     private healthBars: Phaser.GameObjects.Graphics[] = []; // Still need to store these individually for updates
     private playerLabels: Phaser.GameObjects.Text[] = []; // Still need to store these individually for updates
     private playerInventoryTexts: Phaser.GameObjects.Text[] = []; // Still need to store these individually for updates
-    private goldBars: Phaser.GameObjects.Graphics[] = []; // Gold bars remain static
 
     private gameEnded: boolean = false;
     private roundOverFlag: boolean = false; // Renamed to avoid conflict, controls round logic within scene
@@ -524,25 +513,7 @@ class GameScene extends Phaser.Scene {
             this.playerInventoryTexts.push(inventoryText);
         }
 
-        // Create static Gold Bars (not pinned to players)
-        for (let i = 0; i < this.players.length; i++) {
-            const player = this.players[i]; // Still need player for context if showing ID, or just use index
-            const x = 20; // Static X position for gold bars
-            const yBase = 30 + i * 25; // Static Y position, reduced spacing as other elements moved
-
-            // Gold bar background
-            const goldBarBg = this.add.graphics();
-            goldBarBg.fillStyle(0x333333);
-            // Simple label for which player this gold bar is for
-            this.add.text(x, yBase -15, player.id + " Gold:", { fontSize: '10px', color: '#FFD700' });
-            goldBarBg.fillRect(x, yBase, 100, 8); // Static position
-
-            // Gold bar
-            const goldBar = this.add.graphics();
-            this.goldBars.push(goldBar); // Still store it for updates
-             // Gold amount text (static label, dynamic value updated in updateUI)
-            // this.add.text(x + 105, yBase, 'Gold', { fontSize: '10px', color: '#ffffff' }); // "Gold" text label
-        }
+        // Static Gold Bars and their labels have been removed.
     }
 
     private updateUI(): void {
@@ -561,7 +532,6 @@ class GameScene extends Phaser.Scene {
             // Update container position to follow the player sprite
             // Adjust Y to be slightly above the player's sprite center, providing more gap
             uiContainer.setPosition(player.sprite.x, player.sprite.y - (player.sprite.height / 2) - 10);
-
 
             // Update health bar (already positioned relative to container)
             healthBar.clear();
@@ -583,27 +553,9 @@ class GameScene extends Phaser.Scene {
 
             // Update label color based on player status (already positioned relative to container)
             // This is handled by the container's visibility now. If needed, specific color changes can be added.
-            // if (!player.isAlive) {
-            //     label.setColor('#666666');
-            // } else {
-            //     label.setColor('#ffffff');
-            // }
         }
 
-        // Update static Gold Bars
-        for (let i = 0; i < this.players.length; i++) {
-            const player = this.players[i];
-            const goldBar = this.goldBars[i];
-            const x = 20; // Static X, must match createUI
-            const yBase = 30 + i * 25; // Static Y, must match createUI
-
-            goldBar.clear();
-            if (player.isAlive) { // Optionally, hide gold bar if player is dead or show last known gold
-                const goldPercent = Math.min(player.getGold() / 20, 1); // Max display of 20 gold for scale
-                goldBar.fillStyle(0xffd700); // Gold color
-                goldBar.fillRect(x, yBase, 100 * goldPercent, 8); // Static position
-            }
-        }
+        // Static Gold Bar update loop has been removed.
     }
 
     // Renamed from checkRoundOrWinCondition - only checks for overall game win condition.
