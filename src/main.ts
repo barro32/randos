@@ -1,9 +1,11 @@
 import { BattleArenaGame, GameState } from './game'; // Import GameState
+import { Player } from './player'; // Import Player type
 
 class GameController {
     private game: BattleArenaGame | null = null;
     private playerCount: number = 2; // Default player count
     private currentPlayerIndexForShop: number = 0; // Added for shopping turns
+    private sortedPlayersForShop: Player[] = []; // Added for sorted shopping order
 
     // UI Elements
     private startButton: HTMLButtonElement;
@@ -87,8 +89,14 @@ class GameController {
     }
 
     private goToShop(): void {
-        if (this.game) {
+        if (this.game && this.game.gameScene) {
             this.currentPlayerIndexForShop = 0; // Reset for the first player
+            const alivePlayers = this.game.gameScene.getAlivePlayers();
+            if (alivePlayers) {
+                this.sortedPlayersForShop = alivePlayers.sort((a, b) => a.getGold() - b.getGold());
+            } else {
+                this.sortedPlayersForShop = [];
+            }
             this.game.setCurrentGameState(GameState.Shop);
             // displayShopUI will be called via updateUIVisibility -> updateGameStatus
         }
@@ -99,10 +107,11 @@ class GameController {
             return;
         }
 
-        const alivePlayers = this.game.gameScene?.getAlivePlayers() || [];
+        // Use the sorted list of players
+        // const alivePlayers = this.game.gameScene?.getAlivePlayers() || [];
         this.currentPlayerIndexForShop++;
 
-        if (this.currentPlayerIndexForShop < alivePlayers.length) {
+        if (this.currentPlayerIndexForShop < this.sortedPlayersForShop.length) {
             this.displayShopUI(); // Show shop for the next player
         } else {
             // All players have shopped
@@ -111,6 +120,7 @@ class GameController {
             if (this.gameStatusElement) {
                 this.gameStatusElement.textContent = `All players finished shopping. Starting next round...`;
             }
+            this.sortedPlayersForShop = []; // Clear the sorted list
             this.startNextRound();
         }
     }
@@ -122,9 +132,10 @@ class GameController {
         }
 
         const shop = this.game.shopInstance;
-        const alivePlayers = this.game.gameScene.getAlivePlayers();
+        // Use the sorted list of players
+        // const alivePlayers = this.game.gameScene.getAlivePlayers();
 
-        if (this.currentPlayerIndexForShop >= alivePlayers.length) {
+        if (this.currentPlayerIndexForShop >= this.sortedPlayersForShop.length) {
             // This case should now be handled by finishShoppingTurn,
             // which automatically starts the next round.
             // If somehow reached, hide shop.
@@ -133,7 +144,7 @@ class GameController {
             return;
         }
 
-        const currentPlayer = alivePlayers[this.currentPlayerIndexForShop];
+        const currentPlayer = this.sortedPlayersForShop[this.currentPlayerIndexForShop];
         if (!currentPlayer) { // Should not happen if logic is correct
             this.shopOverlayElement.classList.add('hidden');
             return;
@@ -199,6 +210,7 @@ class GameController {
 
     private startNextRound(): void {
         if (this.game) {
+            this.sortedPlayersForShop = []; // Clear the sorted list as a safeguard
             this.game.nextRound(); // This internally sets state to Playing
             // updateUIVisibility will be called by updateGameStatus
         }
