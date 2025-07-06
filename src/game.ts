@@ -121,16 +121,6 @@ export class BattleArenaGame {
         return 0;
     }
 
-    // playerReady is no longer needed as the shopping phase completion gates the next round.
-    // public playerReady(playerId: string): void {
-    //     if (this.currentGameState === GameState.RoundOver || this.currentGameState === GameState.Shop) {
-    //         this.readyPlayers.add(playerId);
-    //         console.log(`${playerId} is ready.`);
-    //         // Optionally, attempt to start next round if all are now ready
-    //         this.nextRound();
-    //     }
-    // }
-
     private startRoundTimer(): void {
         if (this.roundTimer) {
             this.roundTimer.remove(false);
@@ -216,7 +206,6 @@ class GameScene extends Phaser.Scene {
     private healthBars: Phaser.GameObjects.Graphics[] = []; // Still need to store these individually for updates
     private playerLabels: Phaser.GameObjects.Text[] = []; // Still need to store these individually for updates
     private playerInventoryTexts: Phaser.GameObjects.Text[] = []; // Still need to store these individually for updates
-    // private goldBars: Phaser.GameObjects.Graphics[] = []; // Gold bars property removed
 
     private gameEnded: boolean = false;
     private roundOverFlag: boolean = false; // Renamed to avoid conflict, controls round logic within scene
@@ -544,7 +533,6 @@ class GameScene extends Phaser.Scene {
             // Adjust Y to be slightly above the player's sprite center, providing more gap
             uiContainer.setPosition(player.sprite.x, player.sprite.y - (player.sprite.height / 2) - 10);
 
-
             // Update health bar (already positioned relative to container)
             healthBar.clear();
             if (player.isAlive) {
@@ -565,11 +553,6 @@ class GameScene extends Phaser.Scene {
 
             // Update label color based on player status (already positioned relative to container)
             // This is handled by the container's visibility now. If needed, specific color changes can be added.
-            // if (!player.isAlive) {
-            //     label.setColor('#666666');
-            // } else {
-            //     label.setColor('#ffffff');
-            // }
         }
 
         // Static Gold Bar update loop has been removed.
