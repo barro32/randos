@@ -9,10 +9,10 @@ describe('Shopping Order', () => {
         it('should sort players by combined health and gold (lowest first)', () => {
             // Mock players with different health and gold values
             const players = [
-                { id: 'Player 1', health: 100, gold: 50, getGold: () => 50 }, // Total: 150
-                { id: 'Player 2', health: 80, gold: 30, getGold: () => 30 },  // Total: 110
-                { id: 'Player 3', health: 120, gold: 60, getGold: () => 60 }, // Total: 180
-                { id: 'Player 4', health: 90, gold: 40, getGold: () => 40 },  // Total: 130
+                { id: 'Player 1', health: 100, getGold: () => 50 }, // Total: 150
+                { id: 'Player 2', health: 80, getGold: () => 30 },  // Total: 110
+                { id: 'Player 3', health: 120, getGold: () => 60 }, // Total: 180
+                { id: 'Player 4', health: 90, getGold: () => 40 },  // Total: 130
             ];
 
             // Apply the sorting logic that should be used in main.ts
@@ -31,9 +31,9 @@ describe('Shopping Order', () => {
 
         it('should handle players with same total score', () => {
             const players = [
-                { id: 'Player A', health: 100, gold: 50, getGold: () => 50 }, // Total: 150
-                { id: 'Player B', health: 75, gold: 75, getGold: () => 75 },  // Total: 150
-                { id: 'Player C', health: 150, gold: 0, getGold: () => 0 },   // Total: 150
+                { id: 'Player A', health: 100, getGold: () => 50 }, // Total: 150
+                { id: 'Player B', health: 75, getGold: () => 75 },  // Total: 150
+                { id: 'Player C', health: 150, getGold: () => 0 },   // Total: 150
             ];
 
             const sorted = players.sort((a, b) => {
@@ -51,9 +51,9 @@ describe('Shopping Order', () => {
 
         it('should place player with lowest health and no gold first', () => {
             const players = [
-                { id: 'Rich and Healthy', health: 150, gold: 100, getGold: () => 100 }, // Total: 250
-                { id: 'Poor and Weak', health: 10, gold: 5, getGold: () => 5 },         // Total: 15
-                { id: 'Medium', health: 80, gold: 40, getGold: () => 40 },              // Total: 120
+                { id: 'Rich and Healthy', health: 150, getGold: () => 100 }, // Total: 250
+                { id: 'Poor and Weak', health: 10, getGold: () => 5 },         // Total: 15
+                { id: 'Medium', health: 80, getGold: () => 40 },              // Total: 120
             ];
 
             const sorted = players.sort((a, b) => {
@@ -69,9 +69,9 @@ describe('Shopping Order', () => {
 
         it('should place player with highest health and gold last', () => {
             const players = [
-                { id: 'Medium', health: 100, gold: 50, getGold: () => 50 },             // Total: 150
-                { id: 'Rich and Healthy', health: 150, gold: 100, getGold: () => 100 }, // Total: 250
-                { id: 'Weak', health: 50, gold: 25, getGold: () => 25 },                // Total: 75
+                { id: 'Medium', health: 100, getGold: () => 50 },             // Total: 150
+                { id: 'Rich and Healthy', health: 150, getGold: () => 100 }, // Total: 250
+                { id: 'Weak', health: 50, getGold: () => 25 },                // Total: 75
             ];
 
             const sorted = players.sort((a, b) => {
@@ -86,7 +86,7 @@ describe('Shopping Order', () => {
 
         it('should work with single player', () => {
             const players = [
-                { id: 'Solo Player', health: 100, gold: 50, getGold: () => 50 },
+                { id: 'Solo Player', health: 100, getGold: () => 50 },
             ];
 
             const sorted = players.sort((a, b) => {
@@ -101,9 +101,9 @@ describe('Shopping Order', () => {
 
         it('should correctly order players after a round where one took damage', () => {
             const players = [
-                { id: 'Player 1', health: 50, gold: 50, getGold: () => 50 },  // Total: 100 (took damage)
-                { id: 'Player 2', health: 150, gold: 50, getGold: () => 50 }, // Total: 200 (no damage)
-                { id: 'Player 3', health: 100, gold: 30, getGold: () => 30 }, // Total: 130 (some damage)
+                { id: 'Player 1', health: 50, getGold: () => 50 },  // Total: 100 (took damage)
+                { id: 'Player 2', health: 150, getGold: () => 50 }, // Total: 200 (no damage)
+                { id: 'Player 3', health: 100, getGold: () => 30 }, // Total: 130 (some damage)
             ];
 
             const sorted = players.sort((a, b) => {
@@ -120,9 +120,9 @@ describe('Shopping Order', () => {
 
         it('should handle zero values correctly', () => {
             const players = [
-                { id: 'No Health', health: 0, gold: 50, getGold: () => 50 },    // Total: 50
-                { id: 'No Gold', health: 100, gold: 0, getGold: () => 0 },      // Total: 100
-                { id: 'Both', health: 25, gold: 25, getGold: () => 25 },        // Total: 50
+                { id: 'No Health', health: 0, getGold: () => 50 },    // Total: 50
+                { id: 'No Gold', health: 100, getGold: () => 0 },      // Total: 100
+                { id: 'Both', health: 25, getGold: () => 25 },        // Total: 50
             ];
 
             const sorted = players.sort((a, b) => {
