@@ -189,14 +189,14 @@ class GameController {
                 `;
 
                 // Special handling for Foe Magnet - show +/- buttons
-                if (shopItem.item.name === "Foe Magnet") {
+                if (shopItem.item.requiresAdjustmentValue) {
                     const buttonContainer = document.createElement('div');
                     buttonContainer.style.display = 'flex';
                     buttonContainer.style.gap = '5px';
                     
                     const buyMinusButton = document.createElement('button');
                     buyMinusButton.textContent = 'Buy (-1 Repel)';
-                    buyMinusButton.disabled = currentPlayer.getGold() < shopItem.item.cost || currentPlayer.foeAttraction <= -10;
+                    buyMinusButton.disabled = currentPlayer.getGold() < shopItem.item.cost || currentPlayer.foeAttraction === -10;
                     buyMinusButton.onclick = () => {
                         if (this.game) {
                             this.game.playerAttemptToBuyItem(currentPlayer, index, -1);
@@ -206,7 +206,7 @@ class GameController {
                     
                     const buyPlusButton = document.createElement('button');
                     buyPlusButton.textContent = 'Buy (+1 Attract)';
-                    buyPlusButton.disabled = currentPlayer.getGold() < shopItem.item.cost || currentPlayer.foeAttraction >= 10;
+                    buyPlusButton.disabled = currentPlayer.getGold() < shopItem.item.cost || currentPlayer.foeAttraction === 10;
                     buyPlusButton.onclick = () => {
                         if (this.game) {
                             this.game.playerAttemptToBuyItem(currentPlayer, index, 1);

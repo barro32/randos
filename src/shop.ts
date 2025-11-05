@@ -107,8 +107,8 @@ export class Shop {
 
         player.addGold(-shopItem.item.cost);
         
-        // Special handling for foe magnet - use adjustmentValue if provided
-        if (shopItem.item.name === "Foe Magnet" && adjustmentValue !== undefined) {
+        // Special handling for items that require adjustment value
+        if (shopItem.item.requiresAdjustmentValue && adjustmentValue !== undefined) {
             player.adjustFoeAttraction(adjustmentValue);
         } else {
             shopItem.item.applyEffect(player);
