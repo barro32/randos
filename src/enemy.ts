@@ -18,6 +18,7 @@ export class Enemy {
     private lastMoveTime: number = 0;
     private moveInterval: number = 1500; // Slower movement interval for enemies
     private currentVelocity: Phaser.Math.Vector2;
+    private static readonly VELOCITY_THRESHOLD_FACTOR = 0.1; // Minimum velocity threshold as factor of move speed
 
     constructor(scene: Phaser.Scene, x: number, y: number, config: EnemyConfig) {
         this.scene = scene;
@@ -74,21 +75,21 @@ export class Enemy {
     public update(time: number): void {
         if (!this.isAlive || this.isStatic) return;
 
+        const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+        
         // Periodically adjust heading for moving enemies
         if (time - this.lastMoveTime > this.moveInterval) {
-            const body = this.sprite.body as Phaser.Physics.Arcade.Body;
-            if (body.velocity.lengthSq() < (this.moveSpeed * 0.1) ** 2) {
+            const velocityThreshold = this.moveSpeed * Enemy.VELOCITY_THRESHOLD_FACTOR;
+            if (body.velocity.lengthSq() < velocityThreshold ** 2) {
                 this.setInitialVelocity();
             } else {
                 this.adjustHeading();
             }
             this.lastMoveTime = time;
+            
+            // Apply the new velocity after direction change
+            body.setVelocity(this.currentVelocity.x, this.currentVelocity.y);
         }
-
-        // Apply and maintain velocity
-        const body = this.sprite.body as Phaser.Physics.Arcade.Body;
-        this.currentVelocity.normalize().scale(this.moveSpeed);
-        body.setVelocity(this.currentVelocity.x, this.currentVelocity.y);
     }
 
     public takeDamage(amount: number): void {

@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { Player } from './player';
 import { Shop } from './shop'; // Import the Shop class
-import { Enemy, EnemyType, ENEMY_CONFIGS } from './enemy'; // Import Enemy classes
+import { Enemy, EnemyType, ENEMY_CONFIGS } from './enemy'; // Import Enemy class and related types
 
 export enum GameState {
     Playing,
@@ -518,7 +518,13 @@ class GameScene extends Phaser.Scene {
     private spawnEnemies(gameWidth: number, gameHeight: number, spawnMargin: number): void {
         const margin = 20;
         const borderWidth = 4;
-        const enemySpawnMargin = margin + borderWidth + 25; // Accounting for larger enemy sizes
+        // Calculate max enemy size to ensure all enemy types spawn properly
+        const maxEnemySize = Math.max(
+            ENEMY_CONFIGS[EnemyType.Weak].size,
+            ENEMY_CONFIGS[EnemyType.Medium].size,
+            ENEMY_CONFIGS[EnemyType.Strong].size
+        );
+        const enemySpawnMargin = margin + borderWidth + maxEnemySize / 2; // Half-size for center positioning
 
         // Spawn weak enemies (mix of static and moving)
         for (let i = 0; i < 8; i++) {
