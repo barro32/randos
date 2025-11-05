@@ -143,6 +143,18 @@ describe('Shop Items', () => {
                 expect(item.cost).toBeGreaterThanOrEqual(1); // Arbitrary min
             });
         });
+
+        it('should have reduced item costs (50% of original)', () => {
+            // Verify specific halved values
+            expect(items.sword.cost).toBe(5); // Was 10
+            expect(items.shield.cost).toBe(5); // Was 10
+            expect(items.healthPotion.cost).toBe(2.5); // Was 5
+            expect(items.bootsOfSpeed.cost).toBe(4); // Was 8
+            expect(items.amuletOfVitality.cost).toBe(6); // Was 12
+            expect(items.luckyCharm.cost).toBe(3); // Was 6
+            expect(items.vampiricBlade.cost).toBe(7); // Was 14
+            expect(items.titansBelt.cost).toBe(6.5); // Was 13
+        });
     });
 
     describe('Item Effects', () => {
