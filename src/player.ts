@@ -23,7 +23,11 @@ export class Player {
     private maxTurnAngle: number = Math.PI / 4; // Max turn angle per adjustment (45 degrees)
     public attackDamage: number = 15; // Base attack damage
     public defense: number = 0; // Base defense
-    public goldPerHit: number = 1; // Base gold per hit
+    public doubleGoldChance: number = 0; // Chance to get double gold on kill (0-1)
+    public lifestealPercent: number = 0; // Percentage of damage dealt that heals (0-1)
+    public healthRegenPercent: number = 0; // Percentage of max health regenerated periodically (0-1)
+    private lastRegenTime: number = 0;
+    private regenInterval: number = 10000; // 10 seconds
 
     constructor(scene: Phaser.Scene, x: number, y: number, id: string, color: number) {
         this.scene = scene;
@@ -64,6 +68,13 @@ export class Player {
         if (this.isInvulnerable && time - this.lastHitTime > this.invulnerabilityDuration) {
             this.isInvulnerable = false;
             this.sprite.setAlpha(1); // Restore alpha if changed during invulnerability
+        }
+
+        // Handle health regeneration
+        if (this.healthRegenPercent > 0 && time - this.lastRegenTime > this.regenInterval) {
+            const regenAmount = this.maxHealth * this.healthRegenPercent;
+            this.heal(regenAmount);
+            this.lastRegenTime = time;
         }
 
         // Periodically adjust heading
@@ -145,6 +156,19 @@ export class Player {
         }
     }
 
+    public dealDamage(target: any, amount: number): number {
+        // Deal damage and return actual damage dealt (for lifesteal calculation)
+        const actualDamage = Math.max(0, amount - (target.defense || 0));
+        
+        // Apply lifesteal if enabled
+        if (this.lifestealPercent > 0 && this.isAlive) {
+            const healAmount = actualDamage * this.lifestealPercent;
+            this.heal(healAmount);
+        }
+        
+        return actualDamage;
+    }
+
     private die(): void {
         this.isAlive = false;
         this.justDied = true; // Set flag when player dies
@@ -175,12 +199,6 @@ export class Player {
         return this.gold;
     }
 
-    public stealGold(amount: number): number {
-        const stolenAmount = Math.min(amount, this.gold);
-        this.gold -= stolenAmount;
-        return stolenAmount;
-    }
-
     public addGold(amount: number): void {
         this.gold += amount;
     }
@@ -191,10 +209,6 @@ export class Player {
 
     public increaseDefense(amount: number): void {
         this.defense += amount;
-    }
-
-    public increaseGoldPerHit(amount: number): void {
-        this.goldPerHit += amount;
     }
 
     public heal(amount: number): void {

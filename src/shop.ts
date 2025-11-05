@@ -27,9 +27,7 @@ export class Shop {
         if (items.shield) {
             this.availableItems.push({ item: items.shield, quantity: 2 });
         }
-        if (items.goldMagnet) {
-            this.availableItems.push({ item: items.goldMagnet, quantity: 1 });
-        }
+        // Gold Magnet removed - goldPerHit no longer exists
         if (items.bootsOfSpeed) {
             this.availableItems.push({ item: items.bootsOfSpeed, quantity: 1 });
         }
