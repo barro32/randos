@@ -163,6 +163,8 @@ class GameController {
             playerInfoElement.innerHTML = `
                 Health: ${currentPlayer.health}/${currentPlayer.maxHealth} | Gold: ${currentPlayer.getGold()}
                 <br>
+                Foe Attraction: ${currentPlayer.foeAttraction} (${currentPlayer.foeAttraction > 0 ? 'Attract' : currentPlayer.foeAttraction < 0 ? 'Repel' : 'Neutral'})
+                <br>
                 Inventory: ${inventoryIcons || 'Empty'}
             `;
         }
@@ -186,20 +188,54 @@ class GameController {
                     <p>Cost: ${shopItem.item.cost} Gold | Qty: ${shopItem.quantity}</p>
                 `;
 
-                const buyButton = document.createElement('button');
-                buyButton.textContent = 'Buy';
-                buyButton.disabled = currentPlayer.getGold() < shopItem.item.cost;
-                buyButton.onclick = () => {
-                    if (this.game) {
-                        // Pass the actual player object and item's original index (or unique ID)
-                        this.game.playerAttemptToBuyItem(currentPlayer, index); // Adjust index if needed by shop logic
-                        this.displayShopUI(); // Refresh shop UI
-                        // Potentially update player gold in main game UI as well if visible
-                    }
-                };
+                // Special handling for Foe Magnet - show +/- buttons
+                if (shopItem.item.name === "Foe Magnet") {
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.style.display = 'flex';
+                    buttonContainer.style.gap = '5px';
+                    
+                    const buyMinusButton = document.createElement('button');
+                    buyMinusButton.textContent = 'Buy (-1 Repel)';
+                    buyMinusButton.disabled = currentPlayer.getGold() < shopItem.item.cost || currentPlayer.foeAttraction <= -10;
+                    buyMinusButton.onclick = () => {
+                        if (this.game) {
+                            this.game.playerAttemptToBuyItem(currentPlayer, index, -1);
+                            this.displayShopUI();
+                        }
+                    };
+                    
+                    const buyPlusButton = document.createElement('button');
+                    buyPlusButton.textContent = 'Buy (+1 Attract)';
+                    buyPlusButton.disabled = currentPlayer.getGold() < shopItem.item.cost || currentPlayer.foeAttraction >= 10;
+                    buyPlusButton.onclick = () => {
+                        if (this.game) {
+                            this.game.playerAttemptToBuyItem(currentPlayer, index, 1);
+                            this.displayShopUI();
+                        }
+                    };
+                    
+                    buttonContainer.appendChild(buyMinusButton);
+                    buttonContainer.appendChild(buyPlusButton);
+                    itemElement.appendChild(itemInfo);
+                    itemElement.appendChild(buttonContainer);
+                } else {
+                    // Regular buy button for other items
+                    const buyButton = document.createElement('button');
+                    buyButton.textContent = 'Buy';
+                    buyButton.disabled = currentPlayer.getGold() < shopItem.item.cost;
+                    buyButton.onclick = () => {
+                        if (this.game) {
+                            // Pass the actual player object and item's original index (or unique ID)
+                            this.game.playerAttemptToBuyItem(currentPlayer, index); // Adjust index if needed by shop logic
+                            this.displayShopUI(); // Refresh shop UI
+                            // Potentially update player gold in main game UI as well if visible
+                        }
+                    };
 
-                itemElement.appendChild(itemInfo);
-                itemElement.appendChild(buyButton);
+                    itemElement.appendChild(itemInfo);
+                    itemElement.appendChild(buyButton);
+                }
+                
                 this.shopItemsContainer.appendChild(itemElement);
             }
         });

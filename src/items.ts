@@ -107,5 +107,18 @@ export const items: { [key: string]: Item } = {
             // Add 1% health regen every 10 seconds
             player.healthRegenPercent = Math.min(1, player.healthRegenPercent + 0.01);
         }
+    },
+    foeMagnet: {
+        name: "Foe Magnet",
+        description: "Adjust foe attraction +1 to +10 (attract) or -1 to -10 (repel).",
+        icon: "🧲",
+        cost: 7,
+        applyEffect: (player) => {
+            // The item can only be purchased once per round
+            // The player chooses to increase or decrease attraction during purchase
+            // For the item definition, we'll have this adjust by +1 by default
+            // The actual UI will handle the choice of +/- when purchased
+            player.adjustFoeAttraction(1);
+        }
     }
 };
