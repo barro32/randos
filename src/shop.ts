@@ -107,12 +107,8 @@ export class Shop {
 
         player.addGold(-shopItem.item.cost);
         
-        // Special handling for items that require adjustment value
-        if (shopItem.item.requiresAdjustmentValue && adjustmentValue !== undefined) {
-            player.adjustFoeAttraction(adjustmentValue);
-        } else {
-            shopItem.item.applyEffect(player);
-        }
+        // Apply the item's effect, passing adjustmentValue if provided
+        shopItem.item.applyEffect(player, adjustmentValue);
         
         player.inventory.push(shopItem.item);
         shopItem.quantity--;

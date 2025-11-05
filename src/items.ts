@@ -11,7 +11,7 @@ export interface Item {
     /** Emoji or symbol icon for the item */
     icon: string;
     /** Function to apply the item's effect to a player */
-    applyEffect: (player: Player) => void;
+    applyEffect: (player: Player, adjustmentValue?: number) => void;
     /** Cost of the item in gold */
     cost: number;
     /** Optional flag to indicate if this item requires custom purchase handling */
@@ -116,12 +116,10 @@ export const items: { [key: string]: Item } = {
         icon: "🧲",
         cost: 7,
         requiresAdjustmentValue: true,
-        applyEffect: (player) => {
-            // The item can only be purchased once per round
-            // The player chooses to increase or decrease attraction during purchase
-            // For the item definition, we'll have this adjust by +1 by default
-            // The actual UI will handle the choice of +/- when purchased
-            player.adjustFoeAttraction(1);
+        applyEffect: (player, adjustmentValue = 1) => {
+            // Adjust player's foe attraction by the specified value (default +1)
+            // The UI provides +1 or -1 based on which button the player clicks
+            player.adjustFoeAttraction(adjustmentValue);
         }
     }
 };
