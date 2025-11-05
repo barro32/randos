@@ -237,6 +237,14 @@ class GameController {
                     this.gameStatusElement.textContent = `Round ${roundNumber} - Fighting!`;
                     break;
                 case GameState.Shop:
+                    // Initialize sorted players list if entering shop state for the first time
+                    if (this.sortedPlayersForShop.length === 0 && this.game && this.game.gameScene) {
+                        const alivePlayers = this.game.gameScene.getAlivePlayers();
+                        if (alivePlayers) {
+                            this.sortedPlayersForShop = alivePlayers.sort((a, b) => a.getGold() - b.getGold());
+                            this.currentPlayerIndexForShop = 0;
+                        }
+                    }
                     // Message will be handled by displayShopUI for current player, or by finishShoppingTurn when all done.
                     // this.gameStatusElement.textContent = `Round ${roundNumber} - Shop Phase.`;
                     this.displayShopUI(); // This will set the player-specific message.

@@ -44,14 +44,21 @@ export class Shop {
         if (items.shield) {
             this.availableItems.push({ item: items.shield, quantity: 2 });
         }
-        if (items.goldMagnet) {
-            this.availableItems.push({ item: items.goldMagnet, quantity: 1 });
-        }
+        // Gold Magnet removed - goldPerHit no longer exists
         if (items.bootsOfSpeed) {
             this.availableItems.push({ item: items.bootsOfSpeed, quantity: 1 });
         }
         if (items.amuletOfVitality) {
             this.availableItems.push({ item: items.amuletOfVitality, quantity: 1 });
+        }
+        if (items.luckyCharm) {
+            this.availableItems.push({ item: items.luckyCharm, quantity: 2 });
+        }
+        if (items.vampiricBlade) {
+            this.availableItems.push({ item: items.vampiricBlade, quantity: 1 });
+        }
+        if (items.titansBelt) {
+            this.availableItems.push({ item: items.titansBelt, quantity: 1 });
         }
     }
 

@@ -25,6 +25,7 @@ export interface EnemyConfig {
     isStatic: boolean;
     /** Movement speed in pixels per second */
     moveSpeed: number;
+    goldReward: number;
 }
 
 /**
@@ -37,7 +38,8 @@ export const ENEMY_CONFIGS: { [key in EnemyType]: Omit<EnemyConfig, 'isStatic'> 
         damage: 5,
         color: 0x90EE90, // Light green
         size: 25,
-        moveSpeed: 30
+        moveSpeed: 30,
+        goldReward: 1
     },
     [EnemyType.Medium]: {
         type: EnemyType.Medium,
@@ -45,7 +47,8 @@ export const ENEMY_CONFIGS: { [key in EnemyType]: Omit<EnemyConfig, 'isStatic'> 
         damage: 10,
         color: 0xFFA500, // Orange
         size: 35,
-        moveSpeed: 40
+        moveSpeed: 40,
+        goldReward: 3
     },
     [EnemyType.Strong]: {
         type: EnemyType.Strong,
@@ -53,6 +56,7 @@ export const ENEMY_CONFIGS: { [key in EnemyType]: Omit<EnemyConfig, 'isStatic'> 
         damage: 15,
         color: 0xFF4500, // Red-orange
         size: 45,
-        moveSpeed: 25
+        moveSpeed: 25,
+        goldReward: 5
     }
 };

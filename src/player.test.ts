@@ -128,7 +128,6 @@ describe('Player Class', () => {
             expect(player.moveSpeed).toBe(50);
             expect(player.attackDamage).toBe(15);
             expect(player.defense).toBe(0);
-            expect(player.goldPerHit).toBe(1);
         });
 
         it('should create a sprite with correct properties', () => {
@@ -229,23 +228,6 @@ describe('Player Class', () => {
         it('should remove gold with negative amount', () => {
             player.addGold(-5);
             expect(player.gold).toBe(5);
-        });
-
-        it('should steal gold from player', () => {
-            const stolenAmount = player.stealGold(5);
-            expect(stolenAmount).toBe(5);
-            expect(player.gold).toBe(5);
-        });
-
-        it('should not steal more gold than available', () => {
-            const stolenAmount = player.stealGold(100);
-            expect(stolenAmount).toBe(10); // Only has 10 gold
-            expect(player.gold).toBe(0);
-        });
-
-        it('should increase gold per hit', () => {
-            player.increaseGoldPerHit(2);
-            expect(player.goldPerHit).toBe(3);
         });
     });
 

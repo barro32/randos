@@ -51,25 +51,17 @@ export class Player {
     /** Base speed, actual speed can be modified by items */
     public moveSpeed: number = PLAYER_CONSTANTS.BASE_MOVE_SPEED;
     private lastMoveTime: number = 0;
-    /** Interval in ms to adjust heading */
-    private moveInterval: number = PLAYER_CONSTANTS.MOVE_INTERVAL_MS;
-    /** Stores current velocity vector */
-    public currentVelocity: Phaser.Math.Vector2;
-    /** Max turn angle per adjustment in radians */
-    private maxTurnAngle: number = PLAYER_CONSTANTS.MAX_TURN_ANGLE_RAD;
-    public attackDamage: number = PLAYER_CONSTANTS.BASE_ATTACK_DAMAGE;
-    public defense: number = PLAYER_CONSTANTS.BASE_DEFENSE;
-    /** Amount of gold gained per hit on another player */
-    public goldPerHit: number = PLAYER_CONSTANTS.BASE_GOLD_PER_HIT;
+    private moveInterval: number = 1000; // Interval to adjust heading
+    public currentVelocity: Phaser.Math.Vector2; // Stores current velocity vector
+    private maxTurnAngle: number = Math.PI / 4; // Max turn angle per adjustment (45 degrees)
+    public attackDamage: number = 15; // Base attack damage
+    public defense: number = 0; // Base defense
+    public doubleGoldChance: number = 0; // Chance to get double gold on kill (0-1)
+    public lifestealPercent: number = 0; // Percentage of damage dealt that heals (0-1)
+    public healthRegenPercent: number = 0; // Percentage of max health regenerated periodically (0-1)
+    private lastRegenTime: number = 0;
+    private regenInterval: number = 10000; // 10 seconds
 
-    /**
-     * Creates a new player
-     * @param scene - The Phaser scene this player belongs to
-     * @param x - Initial X position
-     * @param y - Initial Y position
-     * @param id - Unique identifier for the player (e.g., "Player 1")
-     * @param color - Color of the player sprite in hex format
-     */
     constructor(scene: Phaser.Scene, x: number, y: number, id: string, color: number) {
         this.scene = scene;
         this.id = id;
@@ -117,6 +109,13 @@ export class Player {
         if (this.isInvulnerable && time - this.lastHitTime > this.invulnerabilityDuration) {
             this.isInvulnerable = false;
             this.sprite.setAlpha(1);
+        }
+
+        // Handle health regeneration
+        if (this.healthRegenPercent > 0 && time - this.lastRegenTime > this.regenInterval) {
+            const regenAmount = this.maxHealth * this.healthRegenPercent;
+            this.heal(regenAmount);
+            this.lastRegenTime = time;
         }
 
         // Periodically adjust heading
@@ -199,9 +198,19 @@ export class Player {
         }
     }
 
-    /**
-     * Handle player death
-     */
+    public dealDamage(target: any, amount: number): number {
+        // Deal damage and return actual damage dealt (for lifesteal calculation)
+        const actualDamage = Math.max(0, amount - (target.defense || 0));
+        
+        // Apply lifesteal if enabled
+        if (this.lifestealPercent > 0 && this.isAlive) {
+            const healAmount = actualDamage * this.lifestealPercent;
+            this.heal(healAmount);
+        }
+        
+        return actualDamage;
+    }
+
     private die(): void {
         this.isAlive = false;
         this.justDied = true;
@@ -240,21 +249,6 @@ export class Player {
         return this.gold;
     }
 
-    /**
-     * Steal gold from this player
-     * @param amount - Amount of gold to steal
-     * @returns Actual amount stolen (limited by available gold)
-     */
-    public stealGold(amount: number): number {
-        const stolenAmount = Math.min(amount, this.gold);
-        this.gold -= stolenAmount;
-        return stolenAmount;
-    }
-
-    /**
-     * Add gold to the player's inventory
-     * @param amount - Amount of gold to add (can be negative to remove)
-     */
     public addGold(amount: number): void {
         this.gold += amount;
     }
@@ -275,18 +269,6 @@ export class Player {
         this.defense += amount;
     }
 
-    /**
-     * Increase the gold earned per hit
-     * @param amount - Amount to increase gold per hit by
-     */
-    public increaseGoldPerHit(amount: number): void {
-        this.goldPerHit += amount;
-    }
-
-    /**
-     * Heal the player
-     * @param amount - Amount of health to restore (capped at maxHealth)
-     */
     public heal(amount: number): void {
         this.health = Math.min(this.maxHealth, this.health + amount);
     }

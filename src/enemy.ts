@@ -35,6 +35,7 @@ export class Enemy {
     public isAlive: boolean = true;
     public type: EnemyType;
     public isStatic: boolean;
+    public goldReward: number;
     private scene: Phaser.Scene;
     private moveSpeed: number;
     private lastMoveTime: number = 0;
@@ -56,6 +57,7 @@ export class Enemy {
         this.damage = config.damage;
         this.isStatic = config.isStatic;
         this.moveSpeed = config.moveSpeed;
+        this.goldReward = config.goldReward;
 
         // Create a rectangle sprite for the enemy
         this.sprite = scene.add.rectangle(x, y, config.size, config.size, config.color);
