@@ -30,7 +30,7 @@ export class Shop {
         if (items.goldMagnet) {
             this.availableItems.push({ item: items.goldMagnet, quantity: 1 });
         }
-         if (items.bootsOfSpeed) {
+        if (items.bootsOfSpeed) {
             this.availableItems.push({ item: items.bootsOfSpeed, quantity: 1 });
         }
         if (items.amuletOfVitality) {
