@@ -20,7 +20,8 @@ const ENEMY_CONSTANTS = {
     SPRITE_BORDER_WIDTH: 2,
     SPRITE_BORDER_COLOR: 0x000000,
     PLAYER_DETECTION_RANGE: 200, // Range at which enemies detect players
-    ATTRACTION_INFLUENCE_FACTOR: 0.3 // How much attraction affects enemy movement (0-1)
+    ATTRACTION_INFLUENCE_FACTOR: 0.3, // How much attraction affects enemy movement (0-1)
+    MIN_ATTRACTION_THRESHOLD: 0.1 // Minimum attraction strength to influence movement
 } as const;
 
 /**
@@ -142,13 +143,12 @@ export class Enemy {
                 let targetAngle: number | undefined = undefined;
                 
                 if (nearbyPlayers && nearbyPlayers.length > 0) {
-                    // Find the nearest player with non-zero attraction
-                    let nearestDistance = ENEMY_CONSTANTS.PLAYER_DETECTION_RANGE;
-                    let strongestAttraction = 0;
+                    // Find the player with strongest attraction influence (considering both attraction value and distance)
+                    let strongestInfluence = 0;
                     let attractionAngle: number | undefined = undefined;
                     
                     for (const player of nearbyPlayers) {
-                        if (!player.isAlive) continue;
+                        if (!player.isAlive || player.foeAttraction === 0) continue;
                         
                         const dx = player.x - this.sprite.x;
                         const dy = player.y - this.sprite.y;
@@ -156,34 +156,31 @@ export class Enemy {
                         
                         // Only consider players within detection range
                         if (distance < ENEMY_CONSTANTS.PLAYER_DETECTION_RANGE && distance > 0) {
-                            // Calculate angle to player
-                            const angleToPlayer = Math.atan2(dy, dx);
+                            // Calculate influence: stronger attraction and closer distance = higher influence
+                            // Normalize distance: closer = higher value (1 at distance 0, decreasing to 0 at max range)
+                            const distanceFactor = 1 - (distance / ENEMY_CONSTANTS.PLAYER_DETECTION_RANGE);
+                            const attractionStrength = Math.abs(player.foeAttraction) / 10; // Normalize to 0-1
+                            const influence = attractionStrength * distanceFactor;
                             
-                            // Attraction determines how much the enemy wants to move towards (+) or away (-) from player
-                            if (Math.abs(player.foeAttraction) > Math.abs(strongestAttraction)) {
-                                strongestAttraction = player.foeAttraction;
+                            // Use the player with the strongest influence
+                            if (influence > strongestInfluence) {
+                                strongestInfluence = influence;
+                                const angleToPlayer = Math.atan2(dy, dx);
                                 
                                 if (player.foeAttraction > 0) {
                                     // Positive attraction - move towards player
                                     attractionAngle = angleToPlayer;
-                                } else if (player.foeAttraction < 0) {
+                                } else {
                                     // Negative attraction - move away from player
                                     attractionAngle = angleToPlayer + Math.PI; // Opposite direction
                                 }
-                                
-                                nearestDistance = distance;
                             }
                         }
                     }
                     
-                    if (attractionAngle !== undefined && strongestAttraction !== 0) {
-                        // Scale the attraction influence by the attraction value (normalized to 0-1)
-                        // Higher absolute values mean stronger influence
-                        const attractionStrength = Math.abs(strongestAttraction) / 10; // Normalize from -10/+10 to 0-1
-                        
-                        if (attractionStrength > 0.1) { // Only apply if attraction is significant
-                            targetAngle = attractionAngle;
-                        }
+                    // Only apply if influence is significant
+                    if (attractionAngle !== undefined && strongestInfluence > ENEMY_CONSTANTS.MIN_ATTRACTION_THRESHOLD) {
+                        targetAngle = attractionAngle;
                     }
                 }
                 

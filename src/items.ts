@@ -14,6 +14,8 @@ export interface Item {
     applyEffect: (player: Player) => void;
     /** Cost of the item in gold */
     cost: number;
+    /** Optional flag to indicate if this item requires custom purchase handling */
+    requiresAdjustmentValue?: boolean;
 }
 
 /**
@@ -113,6 +115,7 @@ export const items: { [key: string]: Item } = {
         description: "Adjust foe attraction +1 to +10 (attract) or -1 to -10 (repel).",
         icon: "🧲",
         cost: 7,
+        requiresAdjustmentValue: true,
         applyEffect: (player) => {
             // The item can only be purchased once per round
             // The player chooses to increase or decrease attraction during purchase
