@@ -72,12 +72,12 @@ export const items: { [key: string]: Item } = {
     },
     vampiricBlade: {
         name: "Vampiric Blade",
-        description: "Increases damage and heals on hit.",
+        description: "Increases damage and gold per hit.",
         icon: "🗡️",
         cost: 14,
         applyEffect: (player) => {
             player.increaseDamage(3);
-            player.increaseGoldPerHit(1); // Using goldPerHit as a proxy for lifesteal effect
+            player.increaseGoldPerHit(1);
         }
     },
     titansBelt: {
