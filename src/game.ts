@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { Player } from './player';
 import { Shop } from './shop'; // Import the Shop class
+import { Enemy, EnemyType, ENEMY_CONFIGS } from './enemy'; // Import Enemy class and related types
 
 const GAME_SCENE_KEY = 'GameScene';
 
@@ -45,9 +46,9 @@ export class BattleArenaGame {
 
         const config: Phaser.Types.Core.GameConfig = {
             type: Phaser.AUTO,
-            // Adjusted to use window dimensions for responsiveness
-            width: window.innerWidth * 0.9 > 400 ? 400 : window.innerWidth * 0.9, // Max width of 400px or 90% of viewport
-            height: window.innerHeight * 0.6 > 533 ? 533 : window.innerHeight * 0.6, // Max height of 533px (maintaining 3:4 for 400 width) or 60% of viewport
+            // Much larger map size for expanded gameplay area
+            width: 1200,
+            height: 900,
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH
@@ -127,14 +128,13 @@ export class BattleArenaGame {
         if (this.roundTimer) {
             this.roundTimer.remove(false);
         }
-        if (this.gameScene?.time) {
+        // Ensure scene and time are available before adding event
+        if (this.gameScene && this.gameScene.time) {
             this.roundTimer = this.gameScene.time.addEvent({
                 delay: this.roundDuration,
                 callback: () => this.endRoundDueToTime(),
                 callbackScope: this
             });
-        } else {
-            console.error('Cannot start round timer: Game scene time system not ready');
         }
     }
 
@@ -206,6 +206,7 @@ export class BattleArenaGame {
 
 class GameScene extends Phaser.Scene {
     private players: Player[] = [];
+    private enemies: Enemy[] = []; // Added enemies array
     private playerCount: number;
     private gameUpdateCallback: (playersAlive: number, roundOver: boolean) => void; // Changed signature
     private gameEndCallback: (winner: string) => void;
@@ -294,6 +295,26 @@ class GameScene extends Phaser.Scene {
             }
         }
 
+        // Spawn neutral enemies
+        this.spawnEnemies(gameWidth, gameHeight, spawnMargin);
+
+        // Set up collision detection between players and enemies
+        this.players.forEach(player => {
+            this.enemies.forEach(enemy => {
+                this.physics.add.collider(
+                    player.sprite,
+                    enemy.sprite,
+                    () => this.handlePlayerEnemyCollision(player, enemy),
+                    undefined,
+                    this
+                );
+            });
+        });
+
+        // Set camera to follow the game area (useful for larger maps)
+        this.cameras.main.setBounds(0, 0, gameWidth, gameHeight);
+        this.cameras.main.setZoom(1);
+
         // Create UI elements
         this.createUI();
 
@@ -306,6 +327,7 @@ class GameScene extends Phaser.Scene {
 
     public update(time: number): void {
         this.players.forEach(player => player.update(time));
+        this.enemies.forEach(enemy => enemy.update(time));
         this.updateUI();
 
         if (!this.gameEnded) {
@@ -334,6 +356,14 @@ class GameScene extends Phaser.Scene {
 
     public resetRound(): void {
         this.roundOverFlag = false;
+        
+        const gameWidth = this.cameras.main.width;
+        const gameHeight = this.cameras.main.height;
+        const borderWidth = 4;
+        const margin = 20;
+        const playerHalfSize = 15;
+        const spawnMargin = margin + borderWidth + playerHalfSize;
+        
         this.players.forEach(p => {
             // Revive player if they were dead and it's not game over (more than 1 player to start with)
             // or if only one player remains (they won the game but we are resetting for a new game structure if any)
@@ -346,18 +376,30 @@ class GameScene extends Phaser.Scene {
             p.sprite.setScale(1);           // Restore scale
 
             // Reposition players
-            const gameWidth = this.cameras.main.width;
-            const gameHeight = this.cameras.main.height;
-            const borderWidth = 4; // Assuming this is consistent or accessible
-            const margin = 20;      // Assuming this is consistent or accessible
-            // Player size is 30x30, so half-size is 15.
-            const playerHalfSize = 15;
-            const spawnMargin = margin + borderWidth + playerHalfSize;
-
             const x = Phaser.Math.Between(spawnMargin, gameWidth - spawnMargin);
             const y = Phaser.Math.Between(spawnMargin, gameHeight - spawnMargin);
             p.sprite.setPosition(x, y);
             (p.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0); // Reset velocity
+        });
+
+        // Remove old enemies and respawn new ones
+        this.enemies.forEach(e => e.destroy());
+        this.enemies = [];
+        
+        // Respawn enemies for the new round
+        this.spawnEnemies(gameWidth, gameHeight, spawnMargin);
+        
+        // Re-establish collision detection between players and new enemies
+        this.players.forEach(player => {
+            this.enemies.forEach(enemy => {
+                this.physics.add.collider(
+                    player.sprite,
+                    enemy.sprite,
+                    () => this.handlePlayerEnemyCollision(player, enemy),
+                    undefined,
+                    this
+                );
+            });
         });
 
         this.gameUpdateCallback(this.getAlivePlayersCount(), false); // Notify that round is reset
@@ -491,6 +533,78 @@ class GameScene extends Phaser.Scene {
         // If relying purely on Arcade physics bounce, we might not need to manually setVelocity here,
         // but then controlling the exact bounce direction relative to player properties is harder.
         // This approach gives direct control.
+    }
+
+    private spawnEnemies(gameWidth: number, gameHeight: number, spawnMargin: number): void {
+        const margin = 20;
+        const borderWidth = 4;
+        // Calculate max enemy size to ensure all enemy types spawn properly
+        const maxEnemySize = Math.max(
+            ENEMY_CONFIGS[EnemyType.Weak].size,
+            ENEMY_CONFIGS[EnemyType.Medium].size,
+            ENEMY_CONFIGS[EnemyType.Strong].size
+        );
+        const enemySpawnMargin = margin + borderWidth + maxEnemySize / 2; // Half-size for center positioning
+
+        // Spawn weak enemies (mix of static and moving)
+        for (let i = 0; i < 8; i++) {
+            const x = Phaser.Math.Between(enemySpawnMargin, gameWidth - enemySpawnMargin);
+            const y = Phaser.Math.Between(enemySpawnMargin, gameHeight - enemySpawnMargin);
+            const isStatic = i % 2 === 0; // Alternate between static and moving
+            const config = { ...ENEMY_CONFIGS[EnemyType.Weak], isStatic };
+            const enemy = new Enemy(this, x, y, config);
+            this.enemies.push(enemy);
+        }
+
+        // Spawn medium enemies (mix of static and moving)
+        for (let i = 0; i < 5; i++) {
+            const x = Phaser.Math.Between(enemySpawnMargin, gameWidth - enemySpawnMargin);
+            const y = Phaser.Math.Between(enemySpawnMargin, gameHeight - enemySpawnMargin);
+            const isStatic = i % 3 === 0; // Some static, more moving
+            const config = { ...ENEMY_CONFIGS[EnemyType.Medium], isStatic };
+            const enemy = new Enemy(this, x, y, config);
+            this.enemies.push(enemy);
+        }
+
+        // Spawn strong enemies (mostly moving)
+        for (let i = 0; i < 3; i++) {
+            const x = Phaser.Math.Between(enemySpawnMargin, gameWidth - enemySpawnMargin);
+            const y = Phaser.Math.Between(enemySpawnMargin, gameHeight - enemySpawnMargin);
+            const isStatic = i === 0; // Only first one is static
+            const config = { ...ENEMY_CONFIGS[EnemyType.Strong], isStatic };
+            const enemy = new Enemy(this, x, y, config);
+            this.enemies.push(enemy);
+        }
+    }
+
+    private handlePlayerEnemyCollision(player: Player, enemy: Enemy): void {
+        if (!player.isAlive || !enemy.isAlive) return;
+
+        const playerBody = player.sprite.body as Phaser.Physics.Arcade.Body;
+        const enemyBody = enemy.sprite.body as Phaser.Physics.Arcade.Body;
+
+        if (!player.isInvulnerable) {
+            // Player takes damage from enemy
+            player.takeDamage(enemy.damage);
+            
+            // Player damages the enemy
+            enemy.takeDamage(player.attackDamage);
+
+            // Set player invulnerable for a short duration
+            const currentTime = this.time.now;
+            player.setInvulnerable(currentTime);
+        }
+
+        // Bounce player away from enemy
+        const collisionAngle = Phaser.Math.Angle.Between(
+            enemy.sprite.x, enemy.sprite.y, 
+            player.sprite.x, player.sprite.y
+        );
+
+        const newVel = new Phaser.Math.Vector2(Math.cos(collisionAngle), Math.sin(collisionAngle));
+        newVel.normalize().scale(player.moveSpeed);
+        playerBody.setVelocity(newVel.x, newVel.y);
+        player.currentVelocity.set(newVel.x, newVel.y);
     }
 
     private createUI(): void {
