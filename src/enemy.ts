@@ -18,7 +18,10 @@ const ENEMY_CONSTANTS = {
     DAMAGE_FLASH_REPEATS: 1,
     DEATH_ANIMATION_DURATION_MS: 300,
     SPRITE_BORDER_WIDTH: 2,
-    SPRITE_BORDER_COLOR: 0x000000
+    SPRITE_BORDER_COLOR: 0x000000,
+    HEALTH_BAR_WIDTH: 40,
+    HEALTH_BAR_HEIGHT: 4,
+    HEALTH_BAR_Y_OFFSET: -5
 } as const;
 
 /**
@@ -41,6 +44,9 @@ export class Enemy {
     private lastMoveTime: number = 0;
     private moveInterval: number = ENEMY_CONSTANTS.MOVE_INTERVAL_MS;
     private currentVelocity: Phaser.Math.Vector2;
+    private healthBarContainer: Phaser.GameObjects.Container;
+    private healthBarBackground: Phaser.GameObjects.Graphics;
+    private healthBar: Phaser.GameObjects.Graphics;
 
     /**
      * Creates a new enemy
@@ -81,6 +87,9 @@ export class Enemy {
             ).normalize().scale(this.moveSpeed);
             this.setInitialVelocity();
         }
+
+        // Create health bar UI
+        this.createHealthBar(x, y);
     }
 
     /**
@@ -92,6 +101,58 @@ export class Enemy {
         this.currentVelocity.setToPolar(initialAngle, this.moveSpeed);
         const body = this.sprite.body as Phaser.Physics.Arcade.Body;
         body.setVelocity(this.currentVelocity.x, this.currentVelocity.y);
+    }
+
+    /**
+     * Create health bar UI for the enemy
+     */
+    private createHealthBar(x: number, y: number): void {
+        // Create container for health bar
+        this.healthBarContainer = this.scene.add.container(x, y);
+
+        // Health bar background
+        this.healthBarBackground = this.scene.add.graphics();
+        this.healthBarBackground.fillStyle(0x333333);
+        this.healthBarBackground.fillRect(
+            -ENEMY_CONSTANTS.HEALTH_BAR_WIDTH / 2,
+            ENEMY_CONSTANTS.HEALTH_BAR_Y_OFFSET,
+            ENEMY_CONSTANTS.HEALTH_BAR_WIDTH,
+            ENEMY_CONSTANTS.HEALTH_BAR_HEIGHT
+        );
+        this.healthBarContainer.add(this.healthBarBackground);
+
+        // Health bar (actual health)
+        this.healthBar = this.scene.add.graphics();
+        this.healthBarContainer.add(this.healthBar);
+
+        // Initial health bar render
+        this.updateHealthBar();
+    }
+
+    /**
+     * Update health bar appearance based on current health
+     */
+    private updateHealthBar(): void {
+        if (!this.healthBar || !this.isAlive) return;
+
+        this.healthBar.clear();
+        const healthPercent = this.health / this.maxHealth;
+        const barColor = healthPercent > 0.5 ? 0x00ff00 : healthPercent > 0.25 ? 0xffff00 : 0xff0000;
+        this.healthBar.fillStyle(barColor);
+        this.healthBar.fillRect(
+            -ENEMY_CONSTANTS.HEALTH_BAR_WIDTH / 2,
+            ENEMY_CONSTANTS.HEALTH_BAR_Y_OFFSET,
+            ENEMY_CONSTANTS.HEALTH_BAR_WIDTH * healthPercent,
+            ENEMY_CONSTANTS.HEALTH_BAR_HEIGHT
+        );
+
+        // Update container position to follow sprite
+        if (this.healthBarContainer && this.sprite) {
+            this.healthBarContainer.setPosition(
+                this.sprite.x,
+                this.sprite.y - (this.sprite.height / 2) - 8
+            );
+        }
     }
 
     /**
@@ -112,7 +173,12 @@ export class Enemy {
      * @param time - Current game time in milliseconds
      */
     public update(time: number): void {
-        if (!this.isAlive || this.isStatic) return;
+        if (!this.isAlive) return;
+
+        // Update health bar position
+        this.updateHealthBar();
+
+        if (this.isStatic) return;
 
         const body = this.sprite.body as Phaser.Physics.Arcade.Body;
         
@@ -140,6 +206,9 @@ export class Enemy {
 
         this.health -= amount;
         
+        // Update health bar immediately
+        this.updateHealthBar();
+        
         // Flash effect when taking damage
         this.scene.tweens.add({
             targets: this.sprite,
@@ -161,6 +230,11 @@ export class Enemy {
     private die(): void {
         this.isAlive = false;
         
+        // Hide health bar
+        if (this.healthBarContainer) {
+            this.healthBarContainer.setVisible(false);
+        }
+        
         // Visual death effect
         this.scene.tweens.add({
             targets: this.sprite,
@@ -178,6 +252,9 @@ export class Enemy {
      * Destroy the enemy sprite and clean up
      */
     public destroy(): void {
+        if (this.healthBarContainer) {
+            this.healthBarContainer.destroy();
+        }
         if (this.sprite) {
             this.sprite.destroy();
         }
