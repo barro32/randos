@@ -51,7 +51,7 @@ export const items: { [key: string]: Item } = {
         name: "Health Potion",
         description: "Restores a small amount of health.",
         icon: "🧪",
-        cost: 2.5,
+        cost: 2,
         applyEffect: (player) => {
             player.heal(20); // Assuming a method to heal exists on Player
         }
@@ -96,7 +96,7 @@ export const items: { [key: string]: Item } = {
         name: "Titan's Belt",
         description: "Decreases max health, increases defense, 1% HP regen/10s.",
         icon: "⚙️",
-        cost: 6.5,
+        cost: 6,
         applyEffect: (player) => {
             // Decrease max health by 15
             player.maxHealth = Math.max(1, player.maxHealth - 15);
