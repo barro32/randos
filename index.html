@@ -79,13 +79,8 @@
         }
         
         #gameContainer {
-            margin-top: 10px; /* Reduced margin */
-            width: 100%;
-            max-width: 400px; /* Max width for game, portrait friendly */
-            height: auto; /* Adjust height automatically */
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            width: 100vw;
+            height: 100vh;
         }
 
         #gameContainer canvas {
@@ -98,6 +93,9 @@
             display: none !important; /* Ensure hidden class works */
         }
         
+        .game-info {
+            opacity: 0.5;
+        }
         .game-info div { /* Spacing for items within game-info */
             margin-bottom: 8px;
         }
@@ -196,8 +194,6 @@
   <script type="module" crossorigin src="/randos/index.GCTjinOZ.js"></script>
 </head>
 <body>
-    <h1>Randos Battle Arena</h1>
-    
     <div id="menu" class="menu">
         <div class="input-group">
             <label for="playerCount">Number of Players (2-8):</label>
