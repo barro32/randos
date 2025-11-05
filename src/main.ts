@@ -93,7 +93,12 @@ class GameController {
             this.currentPlayerIndexForShop = 0; // Reset for the first player
             const alivePlayers = this.game.gameScene.getAlivePlayers();
             if (alivePlayers) {
-                this.sortedPlayersForShop = alivePlayers.sort((a, b) => a.getGold() - b.getGold());
+                // Sort by combined health + gold (lowest first, highest last)
+                this.sortedPlayersForShop = alivePlayers.sort((a, b) => {
+                    const scoreA = a.health + a.getGold();
+                    const scoreB = b.health + b.getGold();
+                    return scoreA - scoreB;
+                });
             } else {
                 this.sortedPlayersForShop = [];
             }
@@ -241,7 +246,12 @@ class GameController {
                     if (this.sortedPlayersForShop.length === 0 && this.game && this.game.gameScene) {
                         const alivePlayers = this.game.gameScene.getAlivePlayers();
                         if (alivePlayers) {
-                            this.sortedPlayersForShop = alivePlayers.sort((a, b) => a.getGold() - b.getGold());
+                            // Sort by combined health + gold (lowest first, highest last)
+                            this.sortedPlayersForShop = alivePlayers.sort((a, b) => {
+                                const scoreA = a.health + a.getGold();
+                                const scoreB = b.health + b.getGold();
+                                return scoreA - scoreB;
+                            });
                             this.currentPlayerIndexForShop = 0;
                         }
                     }
