@@ -203,5 +203,74 @@ describe('Shop Class', () => {
             healthPotion = shop.getAvailableItems().find(i => i.item.name === "Health Potion");
             expect(healthPotion?.quantity).toBe(2);
         });
+
+        it('should clear previous items before restocking', () => {
+            shop = new Shop(mockScene, 2);
+            const initialItemCount = shop.getAvailableItems().length;
+            
+            shop.restock(2);
+            
+            expect(shop.getAvailableItems().length).toBe(initialItemCount);
+        });
+    });
+
+    describe('Edge Cases and Validation', () => {
+        it('should handle multiple purchases of the same item correctly', () => {
+            shop = new Shop(mockScene, 1);
+            mockPlayer1.gold = 100;
+            
+            const swordIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Sword");
+            const initialQuantity = shop.getAvailableItems()[swordIndex].quantity;
+            
+            shop.buyItem(mockPlayer1, swordIndex);
+            shop.buyItem(mockPlayer1, swordIndex);
+            
+            expect(shop.getAvailableItems()[swordIndex].quantity).toBe(initialQuantity - 2);
+            expect(mockPlayer1.inventory.length).toBe(2);
+        });
+
+        it('should handle buying until item is out of stock', () => {
+            shop = new Shop(mockScene, 1);
+            mockPlayer1.gold = 1000;
+            
+            const magnetIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Gold Magnet");
+            const initialQuantity = shop.getAvailableItems()[magnetIndex].quantity;
+            
+            // Buy all available
+            for (let i = 0; i < initialQuantity; i++) {
+                expect(shop.buyItem(mockPlayer1, magnetIndex)).toBe(true);
+            }
+            
+            // Try to buy one more
+            expect(shop.buyItem(mockPlayer1, magnetIndex)).toBe(false);
+            expect(shop.getAvailableItems()[magnetIndex].quantity).toBe(0);
+        });
+
+        it('should not modify player or shop state on failed purchase', () => {
+            shop = new Shop(mockScene, 1);
+            mockPlayer1.gold = 5;
+            const initialGold = mockPlayer1.gold;
+            const initialInventorySize = mockPlayer1.inventory.length;
+            
+            const swordIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Sword");
+            const initialQuantity = shop.getAvailableItems()[swordIndex].quantity;
+            
+            shop.buyItem(mockPlayer1, swordIndex); // Should fail
+            
+            expect(mockPlayer1.gold).toBe(initialGold);
+            expect(mockPlayer1.inventory.length).toBe(initialInventorySize);
+            expect(shop.getAvailableItems()[swordIndex].quantity).toBe(initialQuantity);
+        });
+
+        it('should correctly handle large player counts', () => {
+            shop = new Shop(mockScene, 10);
+            const healthPotion = shop.getAvailableItems().find(i => i.item.name === "Health Potion");
+            expect(healthPotion?.quantity).toBe(9); // 10 - 1
+        });
+
+        it('should handle minimum player count of 1', () => {
+            shop = new Shop(mockScene, 1);
+            expect(shop.getAvailableItems().length).toBeGreaterThan(0);
+        });
     });
 });
