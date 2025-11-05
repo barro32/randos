@@ -364,9 +364,6 @@ class GameScene extends Phaser.Scene {
         const playerHalfSize = 15;
         const spawnMargin = margin + borderWidth + playerHalfSize;
         
-        // Calculate healing amount: 10% of max health per player
-        const healingAmount = (this.playerCount * 0.10) * this.players[0]?.maxHealth || 0;
-        
         this.players.forEach(p => {
             // Revive player if they were dead and it's not game over (more than 1 player to start with)
             // or if only one player remains (they won the game but we are resetting for a new game structure if any)
