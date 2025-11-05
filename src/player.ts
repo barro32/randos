@@ -212,6 +212,10 @@ export class Player {
         this.health += amount; // Also increase current health by the same amount
     }
 
+    public increaseInvulnerabilityDuration(amount: number): void {
+        this.invulnerabilityDuration += amount;
+    }
+
     public destroy(): void {
         if (this.sprite) {
             this.sprite.destroy();

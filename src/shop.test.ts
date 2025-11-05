@@ -84,6 +84,9 @@ describe('Shop Class', () => {
             expect(availableItems).toContain("Gold Magnet");
             expect(availableItems).toContain("Boots of Speed");
             expect(availableItems).toContain("Amulet of Vitality");
+            expect(availableItems).toContain("Lucky Charm");
+            expect(availableItems).toContain("Vampiric Blade");
+            expect(availableItems).toContain("Titan's Belt");
         });
     });
 
