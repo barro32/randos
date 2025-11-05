@@ -39,7 +39,7 @@ export const ENEMY_CONFIGS: { [key in EnemyType]: Omit<EnemyConfig, 'isStatic'> 
         color: 0x90EE90, // Light green
         size: 25,
         moveSpeed: 30,
-        goldReward: 1
+        goldReward: 2
     },
     [EnemyType.Medium]: {
         type: EnemyType.Medium,
@@ -48,7 +48,7 @@ export const ENEMY_CONFIGS: { [key in EnemyType]: Omit<EnemyConfig, 'isStatic'> 
         color: 0xFFA500, // Orange
         size: 35,
         moveSpeed: 40,
-        goldReward: 3
+        goldReward: 6
     },
     [EnemyType.Strong]: {
         type: EnemyType.Strong,
@@ -57,6 +57,6 @@ export const ENEMY_CONFIGS: { [key in EnemyType]: Omit<EnemyConfig, 'isStatic'> 
         color: 0xFF4500, // Red-orange
         size: 45,
         moveSpeed: 25,
-        goldReward: 5
+        goldReward: 10
     }
 };
