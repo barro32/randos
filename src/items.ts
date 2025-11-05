@@ -1,11 +1,24 @@
+import type { Player } from './player';
+
+/**
+ * Represents an item that can be purchased and used by players
+ */
 export interface Item {
+    /** Display name of the item */
     name: string;
+    /** Description of what the item does */
     description: string;
-    icon: string; // Added icon property
-    applyEffect: (player: any) => void; // Consider using a more specific player type
+    /** Emoji or symbol icon for the item */
+    icon: string;
+    /** Function to apply the item's effect to a player */
+    applyEffect: (player: Player) => void;
+    /** Cost of the item in gold */
     cost: number;
 }
 
+/**
+ * Collection of all available items in the game
+ */
 export const items: { [key: string]: Item } = {
     sword: {
         name: "Sword",

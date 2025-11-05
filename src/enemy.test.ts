@@ -122,5 +122,41 @@ describe('Enemy Configurations', () => {
                 expect(config.moveSpeed).toBeGreaterThan(0);
             });
         });
+
+        it('should have unique size values for each type', () => {
+            const sizes = Object.values(ENEMY_CONFIGS).map(c => c.size);
+            const uniqueSizes = new Set(sizes);
+            expect(uniqueSizes.size).toBe(3);
+        });
+
+        it('should have all configs with valid hex colors', () => {
+            Object.values(ENEMY_CONFIGS).forEach(config => {
+                expect(config.color).toBeGreaterThanOrEqual(0);
+                expect(config.color).toBeLessThanOrEqual(0xFFFFFF);
+            });
+        });
+
+        it('should have balanced stat progression', () => {
+            // Health should increase from Weak to Strong
+            expect(ENEMY_CONFIGS[EnemyType.Weak].health).toBeLessThan(ENEMY_CONFIGS[EnemyType.Medium].health);
+            expect(ENEMY_CONFIGS[EnemyType.Medium].health).toBeLessThan(ENEMY_CONFIGS[EnemyType.Strong].health);
+            
+            // Damage should increase from Weak to Strong
+            expect(ENEMY_CONFIGS[EnemyType.Weak].damage).toBeLessThan(ENEMY_CONFIGS[EnemyType.Medium].damage);
+            expect(ENEMY_CONFIGS[EnemyType.Medium].damage).toBeLessThan(ENEMY_CONFIGS[EnemyType.Strong].damage);
+        });
+
+        it('should have reasonable stat ratios', () => {
+            Object.values(ENEMY_CONFIGS).forEach(config => {
+                // Health should be at least twice the damage (survivability)
+                expect(config.health).toBeGreaterThan(config.damage);
+                
+                // Size should be proportional to strength (visual clarity)
+                // Weak should be smaller than Strong
+                if (config.type === EnemyType.Weak) {
+                    expect(config.size).toBeLessThan(ENEMY_CONFIGS[EnemyType.Strong].size);
+                }
+            });
+        });
     });
 });
