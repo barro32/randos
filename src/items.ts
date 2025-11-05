@@ -60,5 +60,34 @@ export const items: { [key: string]: Item } = {
         applyEffect: (player) => {
             player.increaseMaxHealth(25); // Assuming a method to increase max health exists on Player
         }
+    },
+    luckyCharm: {
+        name: "Lucky Charm",
+        description: "Grants bonus gold.",
+        icon: "🍀",
+        cost: 6,
+        applyEffect: (player) => {
+            player.addGold(5); // Gives immediate gold bonus
+        }
+    },
+    vampiricBlade: {
+        name: "Vampiric Blade",
+        description: "Increases damage and heals on hit.",
+        icon: "🗡️",
+        cost: 14,
+        applyEffect: (player) => {
+            player.increaseDamage(3);
+            player.increaseGoldPerHit(1); // Using goldPerHit as a proxy for lifesteal effect
+        }
+    },
+    titansBelt: {
+        name: "Titan's Belt",
+        description: "Increases max health and defense.",
+        icon: "⚙️",
+        cost: 13,
+        applyEffect: (player) => {
+            player.increaseMaxHealth(15);
+            player.increaseDefense(3);
+        }
     }
 };

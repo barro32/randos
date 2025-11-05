@@ -11,6 +11,7 @@ vi.mock('./player', () => {
     Player.prototype.heal = vi.fn();
     Player.prototype.increaseSpeed = vi.fn();
     Player.prototype.increaseMaxHealth = vi.fn();
+    Player.prototype.addGold = vi.fn();
     // Mock other player methods if items.ts uses them
     return { Player };
 });
@@ -33,6 +34,7 @@ describe('Shop Items', () => {
             heal: vi.fn(),
             increaseSpeed: vi.fn(),
             increaseMaxHealth: vi.fn(),
+            addGold: vi.fn(),
             // Ensure all methods called by items are mocked here
         } as unknown as Player; // Type assertion
     });
@@ -69,6 +71,17 @@ describe('Shop Items', () => {
                         break;
                     case 'amuletOfVitality':
                         expect(mockPlayer.increaseMaxHealth).toHaveBeenCalledWith(25);
+                        break;
+                    case 'luckyCharm':
+                        expect(mockPlayer.addGold).toHaveBeenCalledWith(5);
+                        break;
+                    case 'vampiricBlade':
+                        expect(mockPlayer.increaseDamage).toHaveBeenCalledWith(3);
+                        expect(mockPlayer.increaseGoldPerHit).toHaveBeenCalledWith(1);
+                        break;
+                    case 'titansBelt':
+                        expect(mockPlayer.increaseMaxHealth).toHaveBeenCalledWith(15);
+                        expect(mockPlayer.increaseDefense).toHaveBeenCalledWith(3);
                         break;
                     default:
                         // This case should not be reached if all items are handled

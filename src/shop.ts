@@ -36,6 +36,15 @@ export class Shop {
         if (items.amuletOfVitality) {
             this.availableItems.push({ item: items.amuletOfVitality, quantity: 1 });
         }
+        if (items.luckyCharm) {
+            this.availableItems.push({ item: items.luckyCharm, quantity: 2 });
+        }
+        if (items.vampiricBlade) {
+            this.availableItems.push({ item: items.vampiricBlade, quantity: 1 });
+        }
+        if (items.titansBelt) {
+            this.availableItems.push({ item: items.titansBelt, quantity: 1 });
+        }
     }
 
     public displayShop(): void {
