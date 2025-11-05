@@ -1,8 +1,10 @@
+import type { Player } from './player';
+
 export interface Item {
     name: string;
     description: string;
-    icon: string; // Added icon property
-    applyEffect: (player: any) => void; // Consider using a more specific player type
+    icon: string;
+    applyEffect: (player: Player) => void;
     cost: number;
 }
 

@@ -56,6 +56,11 @@ describe('Shop Class', () => {
     });
 
     describe('Constructor and Initialization', () => {
+        it('should throw an error if player count is less than 1', () => {
+            expect(() => new Shop(mockScene, 0)).toThrow('Player count must be at least 1');
+            expect(() => new Shop(mockScene, -1)).toThrow('Player count must be at least 1');
+        });
+
         it('should initialize with correct items and quantities for 1 player', () => {
             shop = new Shop(mockScene, 1);
             const availableItems = shop.getAvailableItems();
@@ -109,10 +114,8 @@ describe('Shop Class', () => {
 
     describe('buyItem', () => {
         beforeEach(() => {
-            shop = new Shop(mockScene, 1); // Player count doesn't affect buy logic directly, only stock
-            mockPlayer1.gold = 100; // Ensure player1 has enough gold for most items
-            // vi.clearAllMocks() is already in the main beforeEach, so player method calls are cleared.
-            // vi.spyOn(console, 'log') is also in the main beforeEach.
+            shop = new Shop(mockScene, 1);
+            mockPlayer1.gold = 100;
         });
 
         it('should allow a player to buy an item if they have enough gold and item is in stock', () => {
@@ -137,7 +140,6 @@ describe('Shop Class', () => {
             expect(result).toBe(false);
             expect(mockPlayer1.addGold).not.toHaveBeenCalled();
             expect(mockPlayer1.inventory).not.toContain(allItems.sword);
-            expect(console.log).toHaveBeenCalledWith("Not enough gold to purchase this item.");
         });
 
         it('should not allow buying an item if it is out of stock', () => {
@@ -149,21 +151,18 @@ describe('Shop Class', () => {
 
             expect(result).toBe(false);
             expect(mockPlayer1.addGold).not.toHaveBeenCalled();
-            expect(console.log).toHaveBeenCalledWith("Invalid item selection or item out of stock.");
         });
 
         it('should not allow buying with an invalid item index', () => {
             const result = shop.buyItem(mockPlayer1, 999); // Invalid index
             expect(result).toBe(false);
-            expect(console.log).toHaveBeenCalledWith("Invalid item selection or item out of stock.");
         });
-         it('should correctly apply health potion effect', () => {
+        
+        it('should correctly apply health potion effect', () => {
             const potionIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Health Potion");
             if (potionIndex === -1 || shop.getAvailableItems()[potionIndex].quantity === 0) {
-                // If health potion is not available or out of stock for this test scenario (e.g. 1 player)
-                // we can skip this test or adjust setup. For now, let's ensure it's available.
-                shop = new Shop(mockScene, 2); // Ensures health potion is available
-                 mockPlayer1.gold = 100; // Reset gold for mockPlayer1
+                shop = new Shop(mockScene, 2);
+                mockPlayer1.gold = 100;
             }
             const potionItemIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Health Potion");
 
@@ -184,26 +183,25 @@ describe('Shop Class', () => {
             shop.buyItem(mockPlayer1, swordShopItemIndex);
             const quantityAfterBuy = shop.getAvailableItems()[swordShopItemIndex].quantity;
 
-            shop.restock(1); // Restock for 1 player
+            shop.restock(1);
 
             const restockedSword = shop.getAvailableItems().find(i => i.item.name === "Sword");
             expect(restockedSword?.quantity).not.toBe(quantityAfterBuy);
-            expect(restockedSword?.quantity).toBe(2); // Default quantity for sword
+            expect(restockedSword?.quantity).toBe(2);
 
             const healthPotion = shop.getAvailableItems().find(i => i.item.name === "Health Potion");
-            expect(healthPotion?.quantity).toBe(0); // For 1 player after restock
-            expect(console.log).toHaveBeenCalledWith("Shop has been restocked!");
+            expect(healthPotion?.quantity).toBe(0);
         });
 
         it('should restock correctly for a different player count', () => {
-            shop = new Shop(mockScene, 1); // Initial shop for 1 player
+            shop = new Shop(mockScene, 1);
             let healthPotion = shop.getAvailableItems().find(i => i.item.name === "Health Potion");
             expect(healthPotion?.quantity).toBe(0);
 
-            shop.restock(3); // Restock for 3 players
+            shop.restock(3);
 
             healthPotion = shop.getAvailableItems().find(i => i.item.name === "Health Potion");
-            expect(healthPotion?.quantity).toBe(2); // 3 - 1 = 2
+            expect(healthPotion?.quantity).toBe(2);
         });
     });
 });

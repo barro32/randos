@@ -1,26 +1,31 @@
 import { Item, items } from './items';
 import { Player } from './player';
 
+/**
+ * Manages the shop system where players can purchase items
+ */
 export class Shop {
     private availableItems: { item: Item, quantity: number }[] = [];
-    private scene: Phaser.Scene; // Assuming the shop UI will be part of a Phaser scene
+    private scene: Phaser.Scene;
 
     constructor(scene: Phaser.Scene, playerCount: number) {
+        if (playerCount < 1) {
+            throw new Error('Player count must be at least 1');
+        }
         this.scene = scene;
         this.initializeShopItems(playerCount);
     }
 
     private initializeShopItems(playerCount: number): void {
-        // Add potion as per issue #6
+        // Add health potion
         if (items.healthPotion) {
             this.availableItems.push({
                 item: items.healthPotion,
-                quantity: Math.max(0, playerCount - 1) // Number of players minus one
+                quantity: Math.max(0, playerCount - 1)
             });
         }
 
-        // Add other items (can be expanded or randomized)
-        // For now, let's add a few more items with a default quantity of 1 or 2
+        // Add other items with default quantities
         if (items.sword) {
             this.availableItems.push({ item: items.sword, quantity: 2 });
         }
@@ -30,7 +35,7 @@ export class Shop {
         if (items.goldMagnet) {
             this.availableItems.push({ item: items.goldMagnet, quantity: 1 });
         }
-         if (items.bootsOfSpeed) {
+        if (items.bootsOfSpeed) {
             this.availableItems.push({ item: items.bootsOfSpeed, quantity: 1 });
         }
         if (items.amuletOfVitality) {
@@ -38,9 +43,10 @@ export class Shop {
         }
     }
 
+    /**
+     * Display shop information (primarily for debugging)
+     */
     public displayShop(): void {
-        // This method will be responsible for rendering the shop UI.
-        // For now, it will log to console. Implementation will depend on how the UI is structured.
         console.log("Welcome to the Shop!");
         this.availableItems.forEach((shopItem, index) => {
             if (shopItem.quantity > 0) {
@@ -54,33 +60,37 @@ export class Shop {
         return this.availableItems;
     }
 
-    public buyItem(player: Player, itemArrayIndex: number): boolean { // Changed itemIndex to itemArrayIndex
-        const shopItem = this.availableItems[itemArrayIndex]; // Use 0-based index directly
+    /**
+     * Attempt to purchase an item for a player
+     * @param player The player attempting to purchase
+     * @param itemArrayIndex The index of the item in the available items array
+     * @returns true if purchase was successful, false otherwise
+     */
+    public buyItem(player: Player, itemArrayIndex: number): boolean {
+        const shopItem = this.availableItems[itemArrayIndex];
 
         if (!shopItem || shopItem.quantity <= 0) {
-            console.log("Invalid item selection or item out of stock.");
             return false;
         }
 
         if (player.getGold() < shopItem.item.cost) {
-            console.log("Not enough gold to purchase this item.");
             return false;
         }
 
-        player.addGold(-shopItem.item.cost); // Deduct gold
+        player.addGold(-shopItem.item.cost);
         shopItem.item.applyEffect(player);
-        player.inventory.push(shopItem.item); // Add item to player's inventory
+        player.inventory.push(shopItem.item);
         shopItem.quantity--;
 
-        console.log(`${player.id} purchased ${shopItem.item.name}.`);
-        this.displayShop(); // Refresh shop display
         return true;
     }
 
-    // Method to restock or change items, perhaps between rounds
+    /**
+     * Restock the shop with new items
+     * @param playerCount Number of players for the new stock
+     */
     public restock(playerCount: number): void {
         this.availableItems = [];
         this.initializeShopItems(playerCount);
-        console.log("Shop has been restocked!");
     }
 }
