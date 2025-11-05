@@ -76,7 +76,7 @@ class GameController {
         }
         // Pass the new updateGameStatus method to BattleArenaGame constructor
         this.game = new BattleArenaGame(playerCount, this.updateGameStatus.bind(this), this.onGameEnd.bind(this));
-        this.game.setCurrentGameState(GameState.Playing); // Start in Playing state
+        // The scene will call setCurrentGameState(GameState.Playing) when it's ready
         // updateUIVisibility will be called by updateGameStatus
     }
 

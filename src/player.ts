@@ -16,10 +16,10 @@ export class Player {
     public inventory: Item[] = []; // Added inventory
 
     private scene: Phaser.Scene;
-    private moveSpeed: number = 50; // Base speed, actual speed can be modified by effects
+    public moveSpeed: number = 50; // Base speed, actual speed can be modified by effects
     private lastMoveTime: number = 0;
     private moveInterval: number = 1000; // Interval to adjust heading
-    private currentVelocity: Phaser.Math.Vector2; // Stores current velocity vector
+    public currentVelocity: Phaser.Math.Vector2; // Stores current velocity vector
     private maxTurnAngle: number = Math.PI / 4; // Max turn angle per adjustment (45 degrees)
     public attackDamage: number = 15; // Base attack damage
     public defense: number = 0; // Base defense
