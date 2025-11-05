@@ -1,21 +1,36 @@
+/**
+ * Enemy types available in the game
+ */
 export enum EnemyType {
     Weak = 'Weak',
     Medium = 'Medium',
     Strong = 'Strong'
 }
 
+/**
+ * Configuration for an enemy type
+ */
 export interface EnemyConfig {
+    /** Type identifier */
     type: EnemyType;
+    /** Initial and maximum health */
     health: number;
+    /** Damage dealt per hit */
     damage: number;
+    /** Sprite color in hex format */
     color: number;
+    /** Size of the sprite in pixels */
     size: number;
+    /** Whether the enemy is stationary */
     isStatic: boolean;
+    /** Movement speed in pixels per second */
     moveSpeed: number;
     goldReward: number;
 }
 
-// Enemy type configurations
+/**
+ * Predefined configurations for each enemy type
+ */
 export const ENEMY_CONFIGS: { [key in EnemyType]: Omit<EnemyConfig, 'isStatic'> } = {
     [EnemyType.Weak]: {
         type: EnemyType.Weak,

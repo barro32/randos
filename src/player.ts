@@ -1,22 +1,55 @@
 import * as Phaser from 'phaser';
-import { Item } from './items'; // Import Item interface
+import { Item } from './items';
 
+/**
+ * Configuration constants for Player behavior and appearance
+ * These values define the base stats and visual/behavioral parameters for all players
+ */
+const PLAYER_CONSTANTS = {
+    INITIAL_HEALTH: 150,
+    INITIAL_GOLD: 10,
+    SPRITE_SIZE: 30,
+    SPRITE_BORDER_WIDTH: 2,
+    BASE_MOVE_SPEED: 50,
+    MOVE_INTERVAL_MS: 1000,
+    MAX_TURN_ANGLE_RAD: Math.PI / 4, // 45 degrees
+    BASE_ATTACK_DAMAGE: 15,
+    BASE_DEFENSE: 0,
+    BASE_GOLD_PER_HIT: 1,
+    INVULNERABILITY_DURATION_MS: 100,
+    DAMAGE_FLASH_DURATION_MS: 100,
+    DAMAGE_FLASH_ALPHA: 0.3,
+    DAMAGE_FLASH_REPEATS: 2,
+    DEATH_ANIMATION_DURATION_MS: 1000,
+    DEATH_SCALE: 0.5,
+    DEATH_ALPHA: 0.3,
+    DEAD_COLOR: 0x666666,
+    DEAD_ALPHA: 0.5,
+    INVULNERABLE_ALPHA: 0.7,
+    MIN_SPEED_FACTOR: 0.1
+} as const;
+
+/**
+ * Represents a player in the battle arena game
+ */
 export class Player {
     public sprite: Phaser.GameObjects.Rectangle;
-    public health: number = 150; // Increased health
-    public maxHealth: number = 150; // Increased maxHealth
-    public gold: number = 10;
+    public health: number = PLAYER_CONSTANTS.INITIAL_HEALTH;
+    public maxHealth: number = PLAYER_CONSTANTS.INITIAL_HEALTH;
+    public gold: number = PLAYER_CONSTANTS.INITIAL_GOLD;
     public isAlive: boolean = true;
     public id: string;
     public color: number;
-    public justDied: boolean = false; // Flag to indicate if player died in the current frame/update cycle
+    /** Flag to indicate if player died in the current frame/update cycle */
+    public justDied: boolean = false;
     public isInvulnerable: boolean = false;
     private lastHitTime: number = 0;
-    private invulnerabilityDuration: number = 100; // 100ms
-    public inventory: Item[] = []; // Added inventory
+    private invulnerabilityDuration: number = PLAYER_CONSTANTS.INVULNERABILITY_DURATION_MS;
+    public inventory: Item[] = [];
 
     private scene: Phaser.Scene;
-    public moveSpeed: number = 50; // Base speed, actual speed can be modified by effects
+    /** Base speed, actual speed can be modified by items */
+    public moveSpeed: number = PLAYER_CONSTANTS.BASE_MOVE_SPEED;
     private lastMoveTime: number = 0;
     private moveInterval: number = 1000; // Interval to adjust heading
     public currentVelocity: Phaser.Math.Vector2; // Stores current velocity vector
@@ -35,8 +68,8 @@ export class Player {
         this.color = color;
 
         // Create a rectangle sprite for the player
-        this.sprite = scene.add.rectangle(x, y, 30, 30, color);
-        this.sprite.setStrokeStyle(2, 0xffffff);
+        this.sprite = scene.add.rectangle(x, y, PLAYER_CONSTANTS.SPRITE_SIZE, PLAYER_CONSTANTS.SPRITE_SIZE, color);
+        this.sprite.setStrokeStyle(PLAYER_CONSTANTS.SPRITE_BORDER_WIDTH, 0xffffff);
         
         // Add physics body
         scene.physics.add.existing(this.sprite);
@@ -53,6 +86,10 @@ export class Player {
         this.scene.physics.world.on('worldbounds', this.handleWorldBoundsCollision, this);
     }
 
+    /**
+     * Handle world bounds collision to update velocity after wall bounce
+     * @param body - The physics body that collided with world bounds
+     */
     private handleWorldBoundsCollision(body: Phaser.Physics.Arcade.Body): void {
         // Check if the collided body belongs to this player
         if (body === this.sprite.body) {
@@ -61,13 +98,17 @@ export class Player {
         }
     }
 
+    /**
+     * Update player state each frame
+     * @param time - Current game time in milliseconds
+     */
     public update(time: number): void {
         if (!this.isAlive) return;
 
         // Handle invulnerability duration
         if (this.isInvulnerable && time - this.lastHitTime > this.invulnerabilityDuration) {
             this.isInvulnerable = false;
-            this.sprite.setAlpha(1); // Restore alpha if changed during invulnerability
+            this.sprite.setAlpha(1);
         }
 
         // Handle health regeneration
@@ -78,13 +119,12 @@ export class Player {
         }
 
         // Periodically adjust heading
-        // Only adjust heading if not recently bounced, to allow bounce to complete
         if (time - this.lastMoveTime > this.moveInterval) {
-            // If player is moving very slowly (e.g. after a bounce slightly misaligned),
-            // give it a nudge to prevent getting stuck near walls.
             const body = this.sprite.body as Phaser.Physics.Arcade.Body;
-            if (body.velocity.lengthSq() < (this.moveSpeed * 0.1) ** 2 && this.isAlive) {
-                this.setInitialVelocity(); // Give a new random direction
+            const minSpeedThreshold = this.moveSpeed * PLAYER_CONSTANTS.MIN_SPEED_FACTOR;
+            
+            if (body.velocity.lengthSq() < minSpeedThreshold ** 2 && this.isAlive) {
+                this.setInitialVelocity();
             } else {
                 this.adjustHeading();
             }
@@ -92,37 +132,35 @@ export class Player {
         }
 
         // Apply velocity based on currentVelocity
-        // currentVelocity is now updated by handleWorldBoundsCollision upon wall bounce
         const body = this.sprite.body as Phaser.Physics.Arcade.Body;
         body.setVelocity(this.currentVelocity.x, this.currentVelocity.y);
 
-        // Ensure the speed is maintained after potential adjustments or bounces
-        // This can be problematic if Phaser's bounce doesn't perfectly preserve speed,
-        // or if we want more controlled bounce speed.
-        // For now, let's re-normalize and scale currentVelocity to maintain moveSpeed.
-        // This needs to be done carefully. If a bounce just happened, body.velocity is Phaser's bounce.
-        // If we immediately normalize and scale, we might alter the bounce effect slightly.
-        // The currentVelocity is updated from body.velocity in handleWorldBoundsCollision.
-        // Then adjustHeading might change it. Then we set it.
-        // Let's ensure moveSpeed is respected after adjustHeading.
+        // Ensure the speed is maintained
         this.currentVelocity.normalize().scale(this.moveSpeed);
         body.setVelocity(this.currentVelocity.x, this.currentVelocity.y);
-
-
     }
 
+    /**
+     * Set the player as temporarily invulnerable
+     * @param time - Current game time when invulnerability starts
+     */
     public setInvulnerable(time: number): void {
         this.isInvulnerable = true;
         this.lastHitTime = time;
-        // Optional: visual feedback for invulnerability
-        this.sprite.setAlpha(0.7);
+        this.sprite.setAlpha(PLAYER_CONSTANTS.INVULNERABLE_ALPHA);
     }
 
+    /**
+     * Set initial random velocity for player movement
+     */
     private setInitialVelocity(): void {
         const initialAngle = Math.random() * Math.PI * 2;
         this.currentVelocity.setToPolar(initialAngle, this.moveSpeed);
     }
 
+    /**
+     * Adjust the player's heading by a random angle
+     */
     private adjustHeading(): void {
         // Get current angle
         let currentAngle = this.currentVelocity.angle();
@@ -135,19 +173,23 @@ export class Player {
         this.currentVelocity.setToPolar(currentAngle, this.moveSpeed);
     }
 
+    /**
+     * Apply damage to the player
+     * @param amount - Amount of damage to apply (before defense)
+     */
     public takeDamage(amount: number): void {
         if (!this.isAlive) return;
 
-        const actualDamage = Math.max(0, amount - this.defense); // Apply defense
+        const actualDamage = Math.max(0, amount - this.defense);
         this.health -= actualDamage;
         
         // Flash effect when taking damage
         this.scene.tweens.add({
             targets: this.sprite,
-            alpha: 0.3,
-            duration: 100,
+            alpha: PLAYER_CONSTANTS.DAMAGE_FLASH_ALPHA,
+            duration: PLAYER_CONSTANTS.DAMAGE_FLASH_DURATION_MS,
             yoyo: true,
-            repeat: 2
+            repeat: PLAYER_CONSTANTS.DAMAGE_FLASH_REPEATS
         });
 
         if (this.health <= 0) {
@@ -171,11 +213,11 @@ export class Player {
 
     private die(): void {
         this.isAlive = false;
-        this.justDied = true; // Set flag when player dies
+        this.justDied = true;
         
         // Visual death effect
-        this.sprite.setFillStyle(0x666666);
-        this.sprite.setAlpha(0.5);
+        this.sprite.setFillStyle(PLAYER_CONSTANTS.DEAD_COLOR);
+        this.sprite.setAlpha(PLAYER_CONSTANTS.DEAD_ALPHA);
         
         // Stop movement
         const body = this.sprite.body as Phaser.Physics.Arcade.Body;
@@ -184,17 +226,25 @@ export class Player {
         // Shrink animation
         this.scene.tweens.add({
             targets: this.sprite,
-            scaleX: 0.5,
-            scaleY: 0.5,
-            alpha: 0.3,
-            duration: 1000
+            scaleX: PLAYER_CONSTANTS.DEATH_SCALE,
+            scaleY: PLAYER_CONSTANTS.DEATH_SCALE,
+            alpha: PLAYER_CONSTANTS.DEATH_ALPHA,
+            duration: PLAYER_CONSTANTS.DEATH_ANIMATION_DURATION_MS
         });
     }
 
+    /**
+     * Get the player's current health as a percentage
+     * @returns Health percentage (0-100)
+     */
     public getHealthPercentage(): number {
         return (this.health / this.maxHealth) * 100;
     }
 
+    /**
+     * Get the player's current gold amount
+     * @returns Current gold amount
+     */
     public getGold(): number {
         return this.gold;
     }
@@ -203,10 +253,18 @@ export class Player {
         this.gold += amount;
     }
 
+    /**
+     * Increase the player's attack damage
+     * @param amount - Amount to increase damage by
+     */
     public increaseDamage(amount: number): void {
         this.attackDamage += amount;
     }
 
+    /**
+     * Increase the player's defense
+     * @param amount - Amount to increase defense by
+     */
     public increaseDefense(amount: number): void {
         this.defense += amount;
     }
@@ -215,17 +273,28 @@ export class Player {
         this.health = Math.min(this.maxHealth, this.health + amount);
     }
 
+    /**
+     * Increase the player's movement speed
+     * @param amount - Amount to increase speed by
+     */
     public increaseSpeed(amount: number): void {
         this.moveSpeed += amount;
         // Update the magnitude of the current velocity vector to reflect the new speed
         this.currentVelocity.normalize().scale(this.moveSpeed);
     }
 
+    /**
+     * Increase the player's maximum health
+     * @param amount - Amount to increase max health by (also increases current health)
+     */
     public increaseMaxHealth(amount: number): void {
         this.maxHealth += amount;
         this.health += amount; // Also increase current health by the same amount
     }
 
+    /**
+     * Destroy the player sprite and clean up
+     */
     public destroy(): void {
         if (this.sprite) {
             this.sprite.destroy();
