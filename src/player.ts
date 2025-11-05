@@ -2,7 +2,8 @@ import * as Phaser from 'phaser';
 import { Item } from './items';
 
 /**
- * Constants for Player configuration
+ * Configuration constants for Player behavior and appearance
+ * These values define the base stats and visual/behavioral parameters for all players
  */
 const PLAYER_CONSTANTS = {
     INITIAL_HEALTH: 150,

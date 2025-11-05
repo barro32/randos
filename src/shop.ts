@@ -24,6 +24,8 @@ export class Shop {
 
     /**
      * Initialize shop items based on player count
+     * Health potion quantity is calculated as Math.max(0, playerCount - 1)
+     * Other items have fixed default quantities
      * @param playerCount - Number of players in the game
      */
     private initializeShopItems(playerCount: number): void {
@@ -54,7 +56,8 @@ export class Shop {
     }
 
     /**
-     * Display shop information (primarily for debugging)
+     * Display shop information to console
+     * Useful for debugging and logging shop state
      */
     public displayShop(): void {
         console.log("Welcome to the Shop!");

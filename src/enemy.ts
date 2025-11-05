@@ -6,7 +6,8 @@ export { EnemyType, ENEMY_CONFIGS } from './enemyConfig';
 export type { EnemyConfig } from './enemyConfig';
 
 /**
- * Constants for Enemy behavior
+ * Configuration constants for Enemy behavior and appearance
+ * These values define the base behavior patterns and visual effects for all enemies
  */
 const ENEMY_CONSTANTS = {
     MOVE_INTERVAL_MS: 1500,
