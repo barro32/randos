@@ -22,7 +22,13 @@ const ENEMY_CONSTANTS = {
     HEALTH_BAR_WIDTH: 40,
     HEALTH_BAR_HEIGHT: 4,
     HEALTH_BAR_Y_OFFSET: -5,
-    HEALTH_BAR_VERTICAL_PADDING: 8
+    HEALTH_BAR_VERTICAL_PADDING: 8,
+    HEALTH_BAR_BACKGROUND_COLOR: 0x333333,
+    HEALTH_BAR_GREEN_COLOR: 0x00ff00,
+    HEALTH_BAR_YELLOW_COLOR: 0xffff00,
+    HEALTH_BAR_RED_COLOR: 0xff0000,
+    HEALTH_BAR_GREEN_THRESHOLD: 0.5,
+    HEALTH_BAR_YELLOW_THRESHOLD: 0.25
 } as const;
 
 /**
@@ -113,7 +119,7 @@ export class Enemy {
 
         // Health bar background
         this.healthBarBackground = this.scene.add.graphics();
-        this.healthBarBackground.fillStyle(0x333333);
+        this.healthBarBackground.fillStyle(ENEMY_CONSTANTS.HEALTH_BAR_BACKGROUND_COLOR);
         this.healthBarBackground.fillRect(
             -ENEMY_CONSTANTS.HEALTH_BAR_WIDTH / 2,
             ENEMY_CONSTANTS.HEALTH_BAR_Y_OFFSET,
@@ -136,12 +142,12 @@ export class Enemy {
      */
     private getHealthBarColor(): number {
         const healthPercent = this.health / this.maxHealth;
-        if (healthPercent > 0.5) {
-            return 0x00ff00; // Green
-        } else if (healthPercent > 0.25) {
-            return 0xffff00; // Yellow
+        if (healthPercent > ENEMY_CONSTANTS.HEALTH_BAR_GREEN_THRESHOLD) {
+            return ENEMY_CONSTANTS.HEALTH_BAR_GREEN_COLOR;
+        } else if (healthPercent > ENEMY_CONSTANTS.HEALTH_BAR_YELLOW_THRESHOLD) {
+            return ENEMY_CONSTANTS.HEALTH_BAR_YELLOW_COLOR;
         } else {
-            return 0xff0000; // Red
+            return ENEMY_CONSTANTS.HEALTH_BAR_RED_COLOR;
         }
     }
 
