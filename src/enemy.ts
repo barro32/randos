@@ -21,7 +21,8 @@ const ENEMY_CONSTANTS = {
     SPRITE_BORDER_COLOR: 0x000000,
     PLAYER_DETECTION_RANGE: 200, // Range at which enemies detect players
     ATTRACTION_INFLUENCE_FACTOR: 0.3, // How much attraction affects enemy movement (0-1)
-    MIN_ATTRACTION_THRESHOLD: 0.1 // Minimum attraction strength to influence movement
+    MIN_ATTRACTION_THRESHOLD: 0.1, // Minimum attraction strength to influence movement
+    MAX_ATTRACTION_VALUE: 10 // Maximum foe attraction value (matches player's range)
 } as const;
 
 /**
@@ -159,7 +160,7 @@ export class Enemy {
                             // Calculate influence: stronger attraction and closer distance = higher influence
                             // Normalize distance: closer = higher value (1 at distance 0, decreasing to 0 at max range)
                             const distanceFactor = 1 - (distance / ENEMY_CONSTANTS.PLAYER_DETECTION_RANGE);
-                            const attractionStrength = Math.abs(player.foeAttraction) / 10; // Normalize to 0-1
+                            const attractionStrength = Math.abs(player.foeAttraction) / ENEMY_CONSTANTS.MAX_ATTRACTION_VALUE; // Normalize to 0-1
                             const influence = attractionStrength * distanceFactor;
                             
                             // Use the player with the strongest influence
