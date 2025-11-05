@@ -3,6 +3,8 @@ import { Player } from './player';
 import { Shop } from './shop'; // Import the Shop class
 import { Enemy, EnemyType, ENEMY_CONFIGS } from './enemy'; // Import Enemy class and related types
 
+const GAME_SCENE_KEY = 'GameScene';
+
 export enum GameState {
     Playing,
     Shop,
@@ -139,10 +141,12 @@ export class BattleArenaGame {
     private endRoundDueToTime(): void {
         if (this.currentGameState === GameState.Playing) {
             console.log("Round ended due to time limit.");
-            this.setCurrentGameState(GameState.RoundOver);
-            // gameScene might need a method to pause players or similar
-            this.gameScene.setRoundOver(true); // Notify scene that round is over by time
-            this.updateCallback(this.gameScene.getAlivePlayersCount(), this.currentGameState, this.currentRound, 0); // Time is 0 when round ends by timer
+            // Stop player movement
+            this.gameScene.stopPlayerMovement();
+            // Set round over flag without calling state change callback
+            this.gameScene.setRoundOverFlag(true);
+            // Now set state to Shop to go directly to shop
+            this.setCurrentGameState(GameState.Shop);
         }
     }
 
@@ -153,14 +157,14 @@ export class BattleArenaGame {
 
         if (newState === GameState.Playing && oldState !== GameState.Playing) {
             // If resuming from a state where scene might have been paused
-            if (this.gameScene.scene && this.gameScene.scene.isPaused('GameScene')) {
-                this.gameScene.scene.resume('GameScene');
+            if (this.gameScene?.scene && this.gameScene.scene.isPaused(GAME_SCENE_KEY)) {
+                this.gameScene.scene.resume(GAME_SCENE_KEY);
             }
             this.startRoundTimer();
         } else if (newState === GameState.Shop) {
             // Pause game scene when entering shop
-            if (this.gameScene.scene && this.gameScene.scene.isActive('GameScene') && !this.gameScene.scene.isPaused('GameScene')) {
-                this.gameScene.scene.pause('GameScene');
+            if (this.gameScene?.scene && this.gameScene.scene.isActive(GAME_SCENE_KEY) && !this.gameScene.scene.isPaused(GAME_SCENE_KEY)) {
+                this.gameScene.scene.pause(GAME_SCENE_KEY);
             }
             if (this.roundTimer) {
                 this.roundTimer.paused = true;
@@ -211,6 +215,7 @@ class GameScene extends Phaser.Scene {
     private healthBars: Phaser.GameObjects.Graphics[] = []; // Still need to store these individually for updates
     private playerLabels: Phaser.GameObjects.Text[] = []; // Still need to store these individually for updates
     private playerInventoryTexts: Phaser.GameObjects.Text[] = []; // Still need to store these individually for updates
+    private playerGoldTexts: Phaser.GameObjects.Text[] = []; // Added for gold display
 
     private gameEnded: boolean = false;
     private roundOverFlag: boolean = false; // Renamed to avoid conflict, controls round logic within scene
@@ -222,7 +227,7 @@ class GameScene extends Phaser.Scene {
         gameEndCallback: (winner: string) => void,
         gameStateChangeCallback: (newState: GameState) => void
     ) {
-        super({ key: 'GameScene' });
+        super({ key: GAME_SCENE_KEY });
         this.playerCount = playerCount;
         this.gameUpdateCallback = gameUpdateCallback;
         this.gameEndCallback = gameEndCallback;
@@ -315,6 +320,9 @@ class GameScene extends Phaser.Scene {
 
         // Initial update
         this.gameUpdateCallback(this.getAlivePlayersCount(), false);
+        
+        // Notify BattleArenaGame that scene is ready - it will start the timer if in Playing state
+        this.gameStateChangeCallback(GameState.Playing);
     }
 
     public update(time: number): void {
@@ -421,6 +429,18 @@ class GameScene extends Phaser.Scene {
             // This will then trigger the main updateCallback with correct state and time.
             this.gameStateChangeCallback(GameState.RoundOver);
         }
+    }
+
+    public setRoundOverFlag(isOver: boolean): void {
+        this.roundOverFlag = isOver;
+    }
+
+    public stopPlayerMovement(): void {
+        this.players.forEach(p => {
+            if (p.sprite.body) {
+                (p.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0,0);
+            }
+        });
     }
 
     private generatePlayerColors(count: number): number[] {
@@ -591,6 +611,7 @@ class GameScene extends Phaser.Scene {
         const healthBarWidth = 60; // Adjusted width for pinned UI
         const healthBarHeight = 8;
         const uiElementOffset = 20; // Offset from player sprite center
+        const healthBarYOffset = 5; // Y offset of health bar from name
 
         // Create Pinned UI elements for each player (name, health, inventory)
         for (let i = 0; i < this.players.length; i++) {
@@ -613,13 +634,23 @@ class GameScene extends Phaser.Scene {
             // Health bar background - position relative to container
             const healthBarBg = this.add.graphics();
             healthBarBg.fillStyle(0x333333);
-            healthBarBg.fillRect(-healthBarWidth / 2, -uiElementOffset +5 , healthBarWidth, healthBarHeight); // Centered below name
+            healthBarBg.fillRect(-healthBarWidth / 2, -uiElementOffset + healthBarYOffset, healthBarWidth, healthBarHeight); // Centered below name
             uiContainer.add(healthBarBg);
 
             // Health bar (actual health) - position relative to container
             const healthBar = this.add.graphics();
             uiContainer.add(healthBar);
             this.healthBars.push(healthBar);
+
+            // Gold display text - position relative to container, next to health bar
+            const goldTextY = -uiElementOffset + healthBarYOffset + (healthBarHeight / 2); // Vertically centered with health bar
+            const goldText = this.add.text(healthBarWidth / 2 + 5, goldTextY, `${player.getGold()}g`, {
+                fontSize: '10px',
+                color: '#FFD700',
+                align: 'left'
+            }).setOrigin(0, 0.5); // Left-aligned, vertically centered with health bar
+            uiContainer.add(goldText);
+            this.playerGoldTexts.push(goldText);
 
             // Player Inventory Icons Text - position relative to container
             const inventoryText = this.add.text(0, -uiElementOffset + 18, '', { // Positioned below health bar
@@ -638,6 +669,7 @@ class GameScene extends Phaser.Scene {
         const healthBarWidth = 60; // Must match createUI
         const healthBarHeight = 8; // Must match createUI
         const uiElementOffset = 20; // Must match createUI
+        const healthBarYOffset = 5; // Must match createUI
 
         // Update Pinned UI elements for each player
         for (let i = 0; i < this.players.length; i++) {
@@ -646,6 +678,7 @@ class GameScene extends Phaser.Scene {
             const healthBar = this.healthBars[i];
             const label = this.playerLabels[i];
             const inventoryText = this.playerInventoryTexts[i];
+            const goldText = this.playerGoldTexts[i];
 
             // Update container position to follow the player sprite
             // Adjust Y to be slightly above the player's sprite center, providing more gap
@@ -657,10 +690,15 @@ class GameScene extends Phaser.Scene {
                 const healthPercent = player.getHealthPercentage() / 100;
                 const barColor = healthPercent > 0.5 ? 0x00ff00 : healthPercent > 0.25 ? 0xffff00 : 0xff0000;
                 healthBar.fillStyle(barColor);
-                healthBar.fillRect(-healthBarWidth / 2, -uiElementOffset + 5, healthBarWidth * healthPercent, healthBarHeight);
+                healthBar.fillRect(-healthBarWidth / 2, -uiElementOffset + healthBarYOffset, healthBarWidth * healthPercent, healthBarHeight);
                 uiContainer.setVisible(true);
             } else {
                 uiContainer.setVisible(false); // Hide all pinned UI if player is not alive
+            }
+
+            // Update gold display (already positioned relative to container)
+            if (player.isAlive) {
+                goldText.setText(`${player.getGold()}g`);
             }
 
             // Update player inventory icons (already positioned relative to container)
