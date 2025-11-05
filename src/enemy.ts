@@ -21,7 +21,8 @@ const ENEMY_CONSTANTS = {
     SPRITE_BORDER_COLOR: 0x000000,
     HEALTH_BAR_WIDTH: 40,
     HEALTH_BAR_HEIGHT: 4,
-    HEALTH_BAR_Y_OFFSET: -5
+    HEALTH_BAR_Y_OFFSET: -5,
+    HEALTH_BAR_VERTICAL_PADDING: 8
 } as const;
 
 /**
@@ -130,6 +131,21 @@ export class Enemy {
     }
 
     /**
+     * Get health bar color based on current health percentage
+     * @returns Hex color value for the health bar
+     */
+    private getHealthBarColor(): number {
+        const healthPercent = this.health / this.maxHealth;
+        if (healthPercent > 0.5) {
+            return 0x00ff00; // Green
+        } else if (healthPercent > 0.25) {
+            return 0xffff00; // Yellow
+        } else {
+            return 0xff0000; // Red
+        }
+    }
+
+    /**
      * Update health bar appearance based on current health
      */
     private updateHealthBar(): void {
@@ -137,7 +153,7 @@ export class Enemy {
 
         this.healthBar.clear();
         const healthPercent = this.health / this.maxHealth;
-        const barColor = healthPercent > 0.5 ? 0x00ff00 : healthPercent > 0.25 ? 0xffff00 : 0xff0000;
+        const barColor = this.getHealthBarColor();
         this.healthBar.fillStyle(barColor);
         this.healthBar.fillRect(
             -ENEMY_CONSTANTS.HEALTH_BAR_WIDTH / 2,
@@ -150,7 +166,7 @@ export class Enemy {
         if (this.healthBarContainer && this.sprite) {
             this.healthBarContainer.setPosition(
                 this.sprite.x,
-                this.sprite.y - (this.sprite.height / 2) - 8
+                this.sprite.y - (this.sprite.height / 2) - ENEMY_CONSTANTS.HEALTH_BAR_VERTICAL_PADDING
             );
         }
     }
