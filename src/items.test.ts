@@ -7,7 +7,6 @@ vi.mock('./player', () => {
     const Player = vi.fn();
     Player.prototype.increaseDamage = vi.fn();
     Player.prototype.increaseDefense = vi.fn();
-    Player.prototype.increaseGoldPerHit = vi.fn();
     Player.prototype.heal = vi.fn();
     Player.prototype.increaseSpeed = vi.fn();
     Player.prototype.increaseMaxHealth = vi.fn();
@@ -30,11 +29,15 @@ describe('Shop Items', () => {
         mockPlayer = {
             increaseDamage: vi.fn(),
             increaseDefense: vi.fn(),
-            increaseGoldPerHit: vi.fn(),
             heal: vi.fn(),
             increaseSpeed: vi.fn(),
             increaseMaxHealth: vi.fn(),
             addGold: vi.fn(),
+            doubleGoldChance: 0,
+            lifestealPercent: 0,
+            healthRegenPercent: 0,
+            maxHealth: 150,
+            health: 150,
             // Ensure all methods called by items are mocked here
         } as unknown as Player; // Type assertion
     });
@@ -61,7 +64,7 @@ describe('Shop Items', () => {
                         expect(mockPlayer.increaseDefense).toHaveBeenCalledWith(5);
                         break;
                     case 'goldMagnet':
-                        expect(mockPlayer.increaseGoldPerHit).toHaveBeenCalledWith(1);
+                        // Gold Magnet is removed, no effect expected
                         break;
                     case 'healthPotion':
                         expect(mockPlayer.heal).toHaveBeenCalledWith(20);
@@ -73,15 +76,18 @@ describe('Shop Items', () => {
                         expect(mockPlayer.increaseMaxHealth).toHaveBeenCalledWith(25);
                         break;
                     case 'luckyCharm':
-                        expect(mockPlayer.addGold).toHaveBeenCalledWith(5);
+                        // Lucky Charm now increases doubleGoldChance
+                        expect(mockPlayer.doubleGoldChance).toBe(0.1);
                         break;
                     case 'vampiricBlade':
-                        expect(mockPlayer.increaseDamage).toHaveBeenCalledWith(3);
-                        expect(mockPlayer.increaseGoldPerHit).toHaveBeenCalledWith(1);
+                        // Vampiric Blade now increases lifestealPercent
+                        expect(mockPlayer.lifestealPercent).toBe(0.1);
                         break;
                     case 'titansBelt':
-                        expect(mockPlayer.increaseMaxHealth).toHaveBeenCalledWith(15);
-                        expect(mockPlayer.increaseDefense).toHaveBeenCalledWith(3);
+                        // Titan's Belt now decreases maxHealth, increases defense by 1, and adds regen
+                        expect(mockPlayer.maxHealth).toBe(135); // 150 - 15
+                        expect(mockPlayer.increaseDefense).toHaveBeenCalledWith(1);
+                        expect(mockPlayer.healthRegenPercent).toBe(0.01);
                         break;
                     default:
                         // This case should not be reached if all items are handled

@@ -27,11 +27,11 @@ export const items: { [key: string]: Item } = {
     },
     goldMagnet: {
         name: "Gold Magnet",
-        description: "Increases gold earned per hit.",
+        description: "Removed - no longer available.",
         icon: "🧲",
-        cost: 15,
+        cost: 999,
         applyEffect: (player) => {
-            player.increaseGoldPerHit(1); // Assuming a method for this exists on Player
+            // No effect - item removed
         }
     },
     healthPotion: {
@@ -63,31 +63,36 @@ export const items: { [key: string]: Item } = {
     },
     luckyCharm: {
         name: "Lucky Charm",
-        description: "Grants bonus gold.",
+        description: "10% chance to get double gold on kill.",
         icon: "🍀",
         cost: 6,
         applyEffect: (player) => {
-            player.addGold(5); // Gives immediate gold bonus
+            player.doubleGoldChance = Math.min(1, player.doubleGoldChance + 0.1); // 10% chance, capped at 100%
         }
     },
     vampiricBlade: {
         name: "Vampiric Blade",
-        description: "Increases damage and gold per hit.",
+        description: "10% lifesteal on damage dealt.",
         icon: "🗡️",
         cost: 14,
         applyEffect: (player) => {
-            player.increaseDamage(3);
-            player.increaseGoldPerHit(1);
+            player.lifestealPercent = Math.min(1, player.lifestealPercent + 0.1); // 10% lifesteal, capped at 100%
         }
     },
     titansBelt: {
         name: "Titan's Belt",
-        description: "Increases max health and defense.",
+        description: "Decreases max health, increases defense, 1% HP regen/10s.",
         icon: "⚙️",
         cost: 13,
         applyEffect: (player) => {
-            player.increaseMaxHealth(15);
-            player.increaseDefense(3);
+            // Decrease max health by 15
+            player.maxHealth = Math.max(1, player.maxHealth - 15);
+            // Decrease current health proportionally to maintain same percentage
+            player.health = Math.min(player.health, player.maxHealth);
+            // Increase defense by 1
+            player.increaseDefense(1);
+            // Add 1% health regen every 10 seconds
+            player.healthRegenPercent = Math.min(1, player.healthRegenPercent + 0.01);
         }
     }
 };
