@@ -39,6 +39,7 @@ export class Player {
     public isAlive: boolean = true;
     public id: string;
     public color: number;
+    /** Flag to indicate if player died in the current frame/update cycle */
     public justDied: boolean = false;
     public isInvulnerable: boolean = false;
     private lastHitTime: number = 0;
@@ -46,15 +47,28 @@ export class Player {
     public inventory: Item[] = [];
 
     private scene: Phaser.Scene;
+    /** Base speed, actual speed can be modified by items */
     public moveSpeed: number = PLAYER_CONSTANTS.BASE_MOVE_SPEED;
     private lastMoveTime: number = 0;
+    /** Interval in ms to adjust heading */
     private moveInterval: number = PLAYER_CONSTANTS.MOVE_INTERVAL_MS;
+    /** Stores current velocity vector */
     public currentVelocity: Phaser.Math.Vector2;
+    /** Max turn angle per adjustment in radians */
     private maxTurnAngle: number = PLAYER_CONSTANTS.MAX_TURN_ANGLE_RAD;
     public attackDamage: number = PLAYER_CONSTANTS.BASE_ATTACK_DAMAGE;
     public defense: number = PLAYER_CONSTANTS.BASE_DEFENSE;
+    /** Amount of gold gained per hit on another player */
     public goldPerHit: number = PLAYER_CONSTANTS.BASE_GOLD_PER_HIT;
 
+    /**
+     * Creates a new player
+     * @param scene - The Phaser scene this player belongs to
+     * @param x - Initial X position
+     * @param y - Initial Y position
+     * @param id - Unique identifier for the player (e.g., "Player 1")
+     * @param color - Color of the player sprite in hex format
+     */
     constructor(scene: Phaser.Scene, x: number, y: number, id: string, color: number) {
         this.scene = scene;
         this.id = id;
@@ -79,6 +93,10 @@ export class Player {
         this.scene.physics.world.on('worldbounds', this.handleWorldBoundsCollision, this);
     }
 
+    /**
+     * Handle world bounds collision to update velocity after wall bounce
+     * @param body - The physics body that collided with world bounds
+     */
     private handleWorldBoundsCollision(body: Phaser.Physics.Arcade.Body): void {
         // Check if the collided body belongs to this player
         if (body === this.sprite.body) {
@@ -87,6 +105,10 @@ export class Player {
         }
     }
 
+    /**
+     * Update player state each frame
+     * @param time - Current game time in milliseconds
+     */
     public update(time: number): void {
         if (!this.isAlive) return;
 
@@ -118,17 +140,27 @@ export class Player {
         body.setVelocity(this.currentVelocity.x, this.currentVelocity.y);
     }
 
+    /**
+     * Set the player as temporarily invulnerable
+     * @param time - Current game time when invulnerability starts
+     */
     public setInvulnerable(time: number): void {
         this.isInvulnerable = true;
         this.lastHitTime = time;
         this.sprite.setAlpha(PLAYER_CONSTANTS.INVULNERABLE_ALPHA);
     }
 
+    /**
+     * Set initial random velocity for player movement
+     */
     private setInitialVelocity(): void {
         const initialAngle = Math.random() * Math.PI * 2;
         this.currentVelocity.setToPolar(initialAngle, this.moveSpeed);
     }
 
+    /**
+     * Adjust the player's heading by a random angle
+     */
     private adjustHeading(): void {
         // Get current angle
         let currentAngle = this.currentVelocity.angle();
@@ -141,6 +173,10 @@ export class Player {
         this.currentVelocity.setToPolar(currentAngle, this.moveSpeed);
     }
 
+    /**
+     * Apply damage to the player
+     * @param amount - Amount of damage to apply (before defense)
+     */
     public takeDamage(amount: number): void {
         if (!this.isAlive) return;
 
@@ -162,6 +198,9 @@ export class Player {
         }
     }
 
+    /**
+     * Handle player death
+     */
     private die(): void {
         this.isAlive = false;
         this.justDied = true;
@@ -184,51 +223,95 @@ export class Player {
         });
     }
 
+    /**
+     * Get the player's current health as a percentage
+     * @returns Health percentage (0-100)
+     */
     public getHealthPercentage(): number {
         return (this.health / this.maxHealth) * 100;
     }
 
+    /**
+     * Get the player's current gold amount
+     * @returns Current gold amount
+     */
     public getGold(): number {
         return this.gold;
     }
 
+    /**
+     * Steal gold from this player
+     * @param amount - Amount of gold to steal
+     * @returns Actual amount stolen (limited by available gold)
+     */
     public stealGold(amount: number): number {
         const stolenAmount = Math.min(amount, this.gold);
         this.gold -= stolenAmount;
         return stolenAmount;
     }
 
+    /**
+     * Add gold to the player's inventory
+     * @param amount - Amount of gold to add (can be negative to remove)
+     */
     public addGold(amount: number): void {
         this.gold += amount;
     }
 
+    /**
+     * Increase the player's attack damage
+     * @param amount - Amount to increase damage by
+     */
     public increaseDamage(amount: number): void {
         this.attackDamage += amount;
     }
 
+    /**
+     * Increase the player's defense
+     * @param amount - Amount to increase defense by
+     */
     public increaseDefense(amount: number): void {
         this.defense += amount;
     }
 
+    /**
+     * Increase the gold earned per hit
+     * @param amount - Amount to increase gold per hit by
+     */
     public increaseGoldPerHit(amount: number): void {
         this.goldPerHit += amount;
     }
 
+    /**
+     * Heal the player
+     * @param amount - Amount of health to restore (capped at maxHealth)
+     */
     public heal(amount: number): void {
         this.health = Math.min(this.maxHealth, this.health + amount);
     }
 
+    /**
+     * Increase the player's movement speed
+     * @param amount - Amount to increase speed by
+     */
     public increaseSpeed(amount: number): void {
         this.moveSpeed += amount;
         // Update the magnitude of the current velocity vector to reflect the new speed
         this.currentVelocity.normalize().scale(this.moveSpeed);
     }
 
+    /**
+     * Increase the player's maximum health
+     * @param amount - Amount to increase max health by (also increases current health)
+     */
     public increaseMaxHealth(amount: number): void {
         this.maxHealth += amount;
         this.health += amount; // Also increase current health by the same amount
     }
 
+    /**
+     * Destroy the player sprite and clean up
+     */
     public destroy(): void {
         if (this.sprite) {
             this.sprite.destroy();

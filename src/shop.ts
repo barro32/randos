@@ -8,6 +8,12 @@ export class Shop {
     private availableItems: { item: Item, quantity: number }[] = [];
     private scene: Phaser.Scene;
 
+    /**
+     * Creates a new shop instance
+     * @param scene - The Phaser scene this shop belongs to
+     * @param playerCount - Number of players (affects item quantities)
+     * @throws Error if playerCount is less than 1
+     */
     constructor(scene: Phaser.Scene, playerCount: number) {
         if (playerCount < 1) {
             throw new Error('Player count must be at least 1');
@@ -16,6 +22,10 @@ export class Shop {
         this.initializeShopItems(playerCount);
     }
 
+    /**
+     * Initialize shop items based on player count
+     * @param playerCount - Number of players in the game
+     */
     private initializeShopItems(playerCount: number): void {
         // Add health potion
         if (items.healthPotion) {
@@ -56,6 +66,10 @@ export class Shop {
         console.log("--------------------");
     }
 
+    /**
+     * Get all available items in the shop
+     * @returns Array of items with their quantities
+     */
     public getAvailableItems(): { item: Item, quantity: number }[] {
         return this.availableItems;
     }
