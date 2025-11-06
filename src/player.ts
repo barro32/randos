@@ -61,7 +61,7 @@ export class Player {
     public healthRegenPercent: number = 0; // Percentage of max health regenerated periodically (0-1)
     private lastRegenTime: number = 0;
     private regenInterval: number = 10000; // 10 seconds
-    public foeAttraction: number = 0; // How much foes are attracted (+) or repelled (-) by this player (-10 to +10)
+    public fightOrFlight: number = 0; // Fight or flight response: positive values make player pursue enemies, negative values make them flee (-10 to +10)
 
     constructor(scene: Phaser.Scene, x: number, y: number, id: string, color: number) {
         this.scene = scene;
@@ -102,8 +102,9 @@ export class Player {
     /**
      * Update player state each frame
      * @param time - Current game time in milliseconds
+     * @param nearbyEnemies - Optional array of nearby enemies to react to based on fightOrFlight
      */
-    public update(time: number): void {
+    public update(time: number, nearbyEnemies?: Array<{ x: number; y: number; isAlive: boolean }>): void {
         if (!this.isAlive) return;
 
         // Handle invulnerability duration
@@ -127,7 +128,7 @@ export class Player {
             if (body.velocity.lengthSq() < minSpeedThreshold ** 2 && this.isAlive) {
                 this.setInitialVelocity();
             } else {
-                this.adjustHeading();
+                this.adjustHeading(nearbyEnemies);
             }
             this.lastMoveTime = time;
         }
@@ -160,13 +161,74 @@ export class Player {
     }
 
     /**
-     * Adjust the player's heading by a random angle
+     * Adjust the player's heading based on fight or flight response
+     * @param nearbyEnemies - Optional array of nearby enemies to react to
      */
-    private adjustHeading(): void {
+    private adjustHeading(nearbyEnemies?: Array<{ x: number; y: number; isAlive: boolean }>): void {
         // Get current angle
         let currentAngle = this.currentVelocity.angle();
+        let targetAngle: number | undefined = undefined;
 
-        // Add a random adjustment within maxTurnAngle
+        // Check if player has fight or flight response active
+        if (this.fightOrFlight !== 0 && nearbyEnemies && nearbyEnemies.length > 0) {
+            // Find the closest alive enemy
+            let closestDistance = Infinity;
+            let closestEnemy: { x: number; y: number; isAlive: boolean } | undefined = undefined;
+            
+            for (const enemy of nearbyEnemies) {
+                if (!enemy.isAlive) continue;
+                
+                const dx = enemy.x - this.sprite.x;
+                const dy = enemy.y - this.sprite.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestEnemy = enemy;
+                }
+            }
+            
+            if (closestEnemy) {
+                // Calculate base detection range (increases with stat magnitude)
+                const statMagnitude = Math.abs(this.fightOrFlight);
+                const baseRange = 100; // Base detection range
+                const maxRange = 400; // Maximum detection range at +/-10
+                const detectionRange = baseRange + (maxRange - baseRange) * (statMagnitude / 10);
+                
+                // Only react to enemies within detection range
+                if (closestDistance < detectionRange) {
+                    const dx = closestEnemy.x - this.sprite.x;
+                    const dy = closestEnemy.y - this.sprite.y;
+                    const angleToEnemy = Math.atan2(dy, dx);
+                    
+                    if (this.fightOrFlight > 0) {
+                        // Positive: move towards enemy (fight)
+                        targetAngle = angleToEnemy;
+                    } else {
+                        // Negative: move away from enemy (flight)
+                        targetAngle = angleToEnemy + Math.PI; // Opposite direction
+                    }
+                    
+                    // Apply speed boost based on stat magnitude
+                    const speedBoostFactor = 1 + (statMagnitude / 10) * 0.5; // Up to 50% speed boost at max
+                    const boostedSpeed = this.moveSpeed * speedBoostFactor;
+                    
+                    // Blend between current angle and target angle based on stat magnitude
+                    const influenceFactor = statMagnitude / 10; // 0 to 1
+                    const angleDiff = targetAngle - currentAngle;
+                    // Normalize angle difference to -PI to PI range
+                    const normalizedDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+                    // Apply influence factor for gradual turn (stronger at higher stat values)
+                    currentAngle += normalizedDiff * influenceFactor * 0.5;
+                    
+                    // Set velocity with boosted speed
+                    this.currentVelocity.setToPolar(currentAngle, boostedSpeed);
+                    return;
+                }
+            }
+        }
+
+        // Default random adjustment if no fight or flight response
         const turnAdjustment = (Math.random() * 2 - 1) * this.maxTurnAngle;
         currentAngle += turnAdjustment;
 
@@ -294,11 +356,11 @@ export class Player {
     }
 
     /**
-     * Adjust the player's foe attraction value
-     * @param amount - Amount to adjust foe attraction by (clamped to -10 to +10 range)
+     * Adjust the player's fight or flight value
+     * @param amount - Amount to adjust fight or flight by (clamped to -10 to +10 range)
      */
-    public adjustFoeAttraction(amount: number): void {
-        this.foeAttraction = Math.max(-10, Math.min(10, this.foeAttraction + amount));
+    public adjustFightOrFlight(amount: number): void {
+        this.fightOrFlight = Math.max(-10, Math.min(10, this.fightOrFlight + amount));
     }
 
     /**

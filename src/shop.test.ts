@@ -16,7 +16,7 @@ vi.mock('./player', () => {
             doubleGoldChance: 0,
             lifestealPercent: 0,
             healthRegenPercent: 0,
-            foeAttraction: 0,
+            fightOrFlight: 0,
             getGold: vi.fn(() => instance.gold), // Access instance's own gold
             addGold: vi.fn((amount: number) => { instance.gold += amount; }),
             increaseDamage: vi.fn(),
@@ -24,8 +24,8 @@ vi.mock('./player', () => {
             heal: vi.fn(),
             increaseSpeed: vi.fn(),
             increaseMaxHealth: vi.fn(),
-            adjustFoeAttraction: vi.fn((amount: number) => {
-                instance.foeAttraction = Math.max(-10, Math.min(10, instance.foeAttraction + amount));
+            adjustFightOrFlight: vi.fn((amount: number) => {
+                instance.fightOrFlight = Math.max(-10, Math.min(10, instance.fightOrFlight + amount));
             }),
         };
         return instance;
@@ -102,31 +102,31 @@ describe('Shop Class', () => {
             expect(availableItems).toContain("Titan's Belt");
         });
 
-        it('should initialize Foe Magnet with quantity matching player count (free adjustment per player)', () => {
+        it('should initialize Fight or Flight with quantity matching player count (free adjustment per player)', () => {
             // Test with 1 player
             shop = new Shop(mockScene, 1);
-            let foeMagnet = shop.getAvailableItems().find(i => i.item.name === "Foe Magnet");
-            expect(foeMagnet).toBeDefined();
-            expect(foeMagnet?.quantity).toBe(1);
+            let fightOrFlight = shop.getAvailableItems().find(i => i.item.name === "Fight or Flight");
+            expect(fightOrFlight).toBeDefined();
+            expect(fightOrFlight?.quantity).toBe(1);
 
             // Test with 3 players
             shop = new Shop(mockScene, 3);
-            foeMagnet = shop.getAvailableItems().find(i => i.item.name === "Foe Magnet");
-            expect(foeMagnet).toBeDefined();
-            expect(foeMagnet?.quantity).toBe(3);
+            fightOrFlight = shop.getAvailableItems().find(i => i.item.name === "Fight or Flight");
+            expect(fightOrFlight).toBeDefined();
+            expect(fightOrFlight?.quantity).toBe(3);
 
             // Test with 8 players
             shop = new Shop(mockScene, 8);
-            foeMagnet = shop.getAvailableItems().find(i => i.item.name === "Foe Magnet");
-            expect(foeMagnet).toBeDefined();
-            expect(foeMagnet?.quantity).toBe(8);
+            fightOrFlight = shop.getAvailableItems().find(i => i.item.name === "Fight or Flight");
+            expect(fightOrFlight).toBeDefined();
+            expect(fightOrFlight?.quantity).toBe(8);
         });
 
-        it('should have Foe Magnet with zero cost', () => {
+        it('should have Fight or Flight with zero cost', () => {
             shop = new Shop(mockScene, 1);
-            const foeMagnet = shop.getAvailableItems().find(i => i.item.name === "Foe Magnet");
-            expect(foeMagnet).toBeDefined();
-            expect(foeMagnet?.item.cost).toBe(0);
+            const fightOrFlight = shop.getAvailableItems().find(i => i.item.name === "Fight or Flight");
+            expect(fightOrFlight).toBeDefined();
+            expect(fightOrFlight?.item.cost).toBe(0);
         });
     });
 
@@ -212,66 +212,66 @@ describe('Shop Class', () => {
             expect(mockPlayer1.inventory).toContain(allItems.healthPotion);
         });
         
-        it('should correctly apply foe magnet effect with positive adjustment', () => {
+        it('should correctly apply fight or flight effect with positive adjustment', () => {
             shop = new Shop(mockScene, 1);
             mockPlayer1.gold = 100;
-            const magnetIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Foe Magnet");
+            const fightOrFlightIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Fight or Flight");
 
-            const result = shop.buyItem(mockPlayer1, magnetIndex, 1);
+            const result = shop.buyItem(mockPlayer1, fightOrFlightIndex, 1);
 
             expect(result).toBe(true);
-            expect(mockPlayer1.addGold).toHaveBeenCalledWith(-allItems.foeMagnet.cost);
-            expect(mockPlayer1.adjustFoeAttraction).toHaveBeenCalledWith(1);
-            expect(mockPlayer1.inventory).toContain(allItems.foeMagnet);
+            expect(mockPlayer1.addGold).toHaveBeenCalledWith(-allItems.fightOrFlight.cost);
+            expect(mockPlayer1.adjustFightOrFlight).toHaveBeenCalledWith(1);
+            expect(mockPlayer1.inventory).toContain(allItems.fightOrFlight);
         });
         
-        it('should correctly apply foe magnet effect with negative adjustment', () => {
+        it('should correctly apply fight or flight effect with negative adjustment', () => {
             shop = new Shop(mockScene, 1);
             mockPlayer1.gold = 100;
-            const magnetIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Foe Magnet");
+            const fightOrFlightIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Fight or Flight");
 
-            const result = shop.buyItem(mockPlayer1, magnetIndex, -1);
+            const result = shop.buyItem(mockPlayer1, fightOrFlightIndex, -1);
 
             expect(result).toBe(true);
-            expect(mockPlayer1.addGold).toHaveBeenCalledWith(-allItems.foeMagnet.cost);
-            expect(mockPlayer1.adjustFoeAttraction).toHaveBeenCalledWith(-1);
-            expect(mockPlayer1.inventory).toContain(allItems.foeMagnet);
+            expect(mockPlayer1.addGold).toHaveBeenCalledWith(-allItems.fightOrFlight.cost);
+            expect(mockPlayer1.adjustFightOrFlight).toHaveBeenCalledWith(-1);
+            expect(mockPlayer1.inventory).toContain(allItems.fightOrFlight);
         });
 
-        it('should allow buying foe magnet with 0 gold (free adjustment)', () => {
+        it('should allow buying fight or flight with 0 gold (free adjustment)', () => {
             shop = new Shop(mockScene, 1);
             mockPlayer1.gold = 0; // No gold
-            const magnetIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Foe Magnet");
+            const fightOrFlightIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Fight or Flight");
 
-            const result = shop.buyItem(mockPlayer1, magnetIndex, 1);
+            const result = shop.buyItem(mockPlayer1, fightOrFlightIndex, 1);
 
             expect(result).toBe(true);
             // buyItem calls addGold(-cost), which is -0 for free items
             expect(mockPlayer1.addGold).toHaveBeenCalled();
-            expect(mockPlayer1.adjustFoeAttraction).toHaveBeenCalledWith(1);
-            expect(mockPlayer1.inventory).toContain(allItems.foeMagnet);
+            expect(mockPlayer1.adjustFightOrFlight).toHaveBeenCalledWith(1);
+            expect(mockPlayer1.inventory).toContain(allItems.fightOrFlight);
         });
         
-        it('should respect foe attraction limits when buying foe magnet', () => {
+        it('should respect fight or flight limits when buying', () => {
             shop = new Shop(mockScene, 1);
             mockPlayer1.gold = 100;
-            mockPlayer1.foeAttraction = 9;
+            mockPlayer1.fightOrFlight = 9;
             
-            const magnetIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Foe Magnet");
+            const fightOrFlightIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Fight or Flight");
             
             // Buy with +1 adjustment
-            shop.buyItem(mockPlayer1, magnetIndex, 1);
-            expect(mockPlayer1.foeAttraction).toBe(10); // Clamped at 10
+            shop.buyItem(mockPlayer1, fightOrFlightIndex, 1);
+            expect(mockPlayer1.fightOrFlight).toBe(10); // Clamped at 10
             
             // Reset for negative test
             shop.restock(1);
-            mockPlayer1.foeAttraction = -9;
+            mockPlayer1.fightOrFlight = -9;
             mockPlayer1.gold = 100;
             
-            const magnetIndex2 = shop.getAvailableItems().findIndex(i => i.item.name === "Foe Magnet");
-            shop.buyItem(mockPlayer1, magnetIndex2, -1);
-            expect(mockPlayer1.foeAttraction).toBe(-10); // Clamped at -10
-            expect(mockPlayer1.inventory).toContain(allItems.foeMagnet);
+            const fightOrFlightIndex2 = shop.getAvailableItems().findIndex(i => i.item.name === "Fight or Flight");
+            shop.buyItem(mockPlayer1, fightOrFlightIndex2, -1);
+            expect(mockPlayer1.fightOrFlight).toBe(-10); // Clamped at -10
+            expect(mockPlayer1.inventory).toContain(allItems.fightOrFlight);
         });
     });
 
