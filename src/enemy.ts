@@ -211,7 +211,7 @@ export class Enemy {
      * @param time - Current game time in milliseconds
      * @param nearbyPlayers - Optional array of nearby players to react to
      */
-    public update(time: number): void {
+    public update(time: number, nearbyPlayers?: Array<{ x: number; y: number; foeAttraction: number; isAlive: boolean }>): void {
         if (!this.isAlive) return;
 
         // Update health bar position
