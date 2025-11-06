@@ -26,7 +26,7 @@ export const items: { [key: string]: Item } = {
         name: "Sword",
         description: "Increases attack damage.",
         icon: "⚔️",
-        cost: 10,
+        cost: 5,
         applyEffect: (player) => {
             player.increaseDamage(5); // Assuming a method to increase damage exists on Player
         }
@@ -35,7 +35,7 @@ export const items: { [key: string]: Item } = {
         name: "Shield",
         description: "Reduces damage taken.",
         icon: "🛡️",
-        cost: 10,
+        cost: 5,
         applyEffect: (player) => {
             player.increaseDefense(5); // Assuming a method to increase defense exists on Player
         }
@@ -53,7 +53,7 @@ export const items: { [key: string]: Item } = {
         name: "Health Potion",
         description: "Restores a small amount of health.",
         icon: "🧪",
-        cost: 5,
+        cost: 2,
         applyEffect: (player) => {
             player.heal(20); // Assuming a method to heal exists on Player
         }
@@ -62,7 +62,7 @@ export const items: { [key: string]: Item } = {
         name: "Boots of Speed",
         description: "Increases movement speed.",
         icon: "👢",
-        cost: 8,
+        cost: 4,
         applyEffect: (player) => {
             player.increaseSpeed(10); // Assuming a method to increase speed exists on Player
         }
@@ -71,7 +71,7 @@ export const items: { [key: string]: Item } = {
         name: "Amulet of Vitality",
         description: "Increases maximum health.",
         icon: "💖",
-        cost: 12,
+        cost: 6,
         applyEffect: (player) => {
             player.increaseMaxHealth(25); // Assuming a method to increase max health exists on Player
         }
@@ -80,7 +80,7 @@ export const items: { [key: string]: Item } = {
         name: "Lucky Charm",
         description: "10% chance to get double gold on kill.",
         icon: "🍀",
-        cost: 6,
+        cost: 3,
         applyEffect: (player) => {
             player.doubleGoldChance = Math.min(1, player.doubleGoldChance + 0.1); // 10% chance, capped at 100%
         }
@@ -89,7 +89,7 @@ export const items: { [key: string]: Item } = {
         name: "Vampiric Blade",
         description: "10% lifesteal on damage dealt.",
         icon: "🗡️",
-        cost: 14,
+        cost: 7,
         applyEffect: (player) => {
             player.lifestealPercent = Math.min(1, player.lifestealPercent + 0.1); // 10% lifesteal, capped at 100%
         }
@@ -98,7 +98,7 @@ export const items: { [key: string]: Item } = {
         name: "Titan's Belt",
         description: "Decreases max health, increases defense, 1% HP regen/10s.",
         icon: "⚙️",
-        cost: 13,
+        cost: 6,
         applyEffect: (player) => {
             // Decrease max health by 15
             player.maxHealth = Math.max(1, player.maxHealth - 15);

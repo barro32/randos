@@ -376,8 +376,9 @@ class GameScene extends Phaser.Scene {
         this.players.forEach(p => {
             // Revive player if they were dead and it's not game over (more than 1 player to start with)
             // or if only one player remains (they won the game but we are resetting for a new game structure if any)
-            // For now, assume reset means full health, reset position for all.
-            p.heal(p.maxHealth); // Heal to full
+            // Heal by 10% of max health per player in the game
+            const healAmount = p.maxHealth * this.playerCount * 0.10;
+            p.heal(healAmount);
             p.isAlive = true;    // Mark as alive
             p.sprite.setActive(true).setVisible(true);
             p.sprite.setFillStyle(p.color); // Restore original color
