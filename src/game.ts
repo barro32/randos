@@ -434,11 +434,15 @@ class GameScene extends Phaser.Scene {
             (p.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0); // Reset velocity
         });
 
-        // Remove old enemies and respawn new ones
-        this.enemies.forEach(e => e.destroy());
-        this.enemies = [];
+        // For round 1, clear enemies and spawn initial set
+        // For subsequent rounds, keep existing enemies and add new ones
+        if (this.currentRoundNumber === 1) {
+            // Clear all enemies for round 1
+            this.enemies.forEach(e => e.destroy());
+            this.enemies = [];
+        }
         
-        // Respawn enemies for the new round
+        // Spawn enemies for the round (initial set for round 1, additional for round 2+)
         this.spawnEnemies(gameWidth, gameHeight, spawnMargin);
         
         // Re-establish collision detection between players and new enemies
@@ -627,7 +631,6 @@ class GameScene extends Phaser.Scene {
 
         if (this.currentRoundNumber === 1) {
             // Round 1: Start with only easy enemies, doubled from original count (32 instead of 16 total)
-            // Original had 8 weak, so double it to 16 weak enemies
             for (let i = 0; i < 32; i++) {
                 const x = Phaser.Math.Between(enemySpawnMargin, gameWidth - enemySpawnMargin);
                 const y = Phaser.Math.Between(enemySpawnMargin, gameHeight - enemySpawnMargin);
