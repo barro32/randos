@@ -227,6 +227,12 @@ export class BattleArenaGame {
                 this.shopInstance = new Shop(this.gameScene, playerCount);
                 this.shopInstance.restock(playerCount); // Restock shop at the beginning of shop phase
             }
+            // Add random items based on alive player count
+            if (this.shopInstance && this.gameScene) {
+                const alivePlayerCount = this.gameScene.getAlivePlayersCount();
+                const randomItemCount = Math.max(0, alivePlayerCount - 1);
+                this.shopInstance.addRandomItems(randomItemCount);
+            }
             // this.shopInstance?.displayShop(); // Removed console log, UI handled by GameController
         }
         this.updateCallback(this.gameScene?.getAlivePlayersCount() || 0, this.currentGameState, this.currentRound, this.getRemainingTime());
