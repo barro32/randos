@@ -11,9 +11,11 @@ export interface Item {
     /** Emoji or symbol icon for the item */
     icon: string;
     /** Function to apply the item's effect to a player */
-    applyEffect: (player: Player) => void;
+    applyEffect: (player: Player, adjustmentValue?: number) => void;
     /** Cost of the item in gold */
     cost: number;
+    /** Optional flag to indicate if this item requires custom purchase handling */
+    requiresAdjustmentValue?: boolean;
 }
 
 /**
@@ -106,6 +108,18 @@ export const items: { [key: string]: Item } = {
             player.increaseDefense(1);
             // Add 1% health regen every 10 seconds
             player.healthRegenPercent = Math.min(1, player.healthRegenPercent + 0.01);
+        }
+    },
+    foeMagnet: {
+        name: "Foe Magnet",
+        description: "Adjust foe attraction +1 to +10 (attract) or -1 to -10 (repel).",
+        icon: "🧲",
+        cost: 7,
+        requiresAdjustmentValue: true,
+        applyEffect: (player, adjustmentValue = 1) => {
+            // Adjust player's foe attraction by the specified value (default +1)
+            // The UI provides +1 or -1 based on which button the player clicks
+            player.adjustFoeAttraction(adjustmentValue);
         }
     }
 };

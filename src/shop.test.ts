@@ -16,6 +16,7 @@ vi.mock('./player', () => {
             doubleGoldChance: 0,
             lifestealPercent: 0,
             healthRegenPercent: 0,
+            foeAttraction: 0,
             getGold: vi.fn(() => instance.gold), // Access instance's own gold
             addGold: vi.fn((amount: number) => { instance.gold += amount; }),
             increaseDamage: vi.fn(),
@@ -23,6 +24,9 @@ vi.mock('./player', () => {
             heal: vi.fn(),
             increaseSpeed: vi.fn(),
             increaseMaxHealth: vi.fn(),
+            adjustFoeAttraction: vi.fn((amount: number) => {
+                instance.foeAttraction = Math.max(-10, Math.min(10, instance.foeAttraction + amount));
+            }),
         };
         return instance;
     };
@@ -179,6 +183,54 @@ describe('Shop Class', () => {
             expect(mockPlayer1.addGold).toHaveBeenCalledWith(-allItems.healthPotion.cost);
             expect(mockPlayer1.heal).toHaveBeenCalledWith(20);
             expect(mockPlayer1.inventory).toContain(allItems.healthPotion);
+        });
+        
+        it('should correctly apply foe magnet effect with positive adjustment', () => {
+            shop = new Shop(mockScene, 1);
+            mockPlayer1.gold = 100;
+            const magnetIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Foe Magnet");
+
+            const result = shop.buyItem(mockPlayer1, magnetIndex, 1);
+
+            expect(result).toBe(true);
+            expect(mockPlayer1.addGold).toHaveBeenCalledWith(-allItems.foeMagnet.cost);
+            expect(mockPlayer1.adjustFoeAttraction).toHaveBeenCalledWith(1);
+            expect(mockPlayer1.inventory).toContain(allItems.foeMagnet);
+        });
+        
+        it('should correctly apply foe magnet effect with negative adjustment', () => {
+            shop = new Shop(mockScene, 1);
+            mockPlayer1.gold = 100;
+            const magnetIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Foe Magnet");
+
+            const result = shop.buyItem(mockPlayer1, magnetIndex, -1);
+
+            expect(result).toBe(true);
+            expect(mockPlayer1.addGold).toHaveBeenCalledWith(-allItems.foeMagnet.cost);
+            expect(mockPlayer1.adjustFoeAttraction).toHaveBeenCalledWith(-1);
+            expect(mockPlayer1.inventory).toContain(allItems.foeMagnet);
+        });
+        
+        it('should respect foe attraction limits when buying foe magnet', () => {
+            shop = new Shop(mockScene, 1);
+            mockPlayer1.gold = 100;
+            mockPlayer1.foeAttraction = 9;
+            
+            const magnetIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Foe Magnet");
+            
+            // Buy with +1 adjustment
+            shop.buyItem(mockPlayer1, magnetIndex, 1);
+            expect(mockPlayer1.foeAttraction).toBe(10); // Clamped at 10
+            
+            // Reset for negative test
+            shop.restock(1);
+            mockPlayer1.foeAttraction = -9;
+            mockPlayer1.gold = 100;
+            
+            const magnetIndex2 = shop.getAvailableItems().findIndex(i => i.item.name === "Foe Magnet");
+            shop.buyItem(mockPlayer1, magnetIndex2, -1);
+            expect(mockPlayer1.foeAttraction).toBe(-10); // Clamped at -10
+            expect(mockPlayer1.inventory).toContain(allItems.foeMagnet);
         });
     });
 
