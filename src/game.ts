@@ -25,6 +25,7 @@ export class BattleArenaGame {
     private roundTimer: Phaser.Time.TimerEvent | null = null;
     private roundDuration: number = 30000; // 30 seconds in milliseconds
     private remainingTime: number = 0; // Added to store remaining time
+    private goldTimer: Phaser.Time.TimerEvent | null = null; // Timer for periodic gold distribution
     // private readyPlayers: Set<string> = new Set(); // Set to store IDs of players who are ready - No longer needed for this flow
 
     constructor(playerCount: number, updateCallback: (playersAlive: number, gameState: GameState, roundNumber: number, remainingTime: number) => void, gameEndCallback: (winner: string) => void) {
@@ -69,6 +70,7 @@ export class BattleArenaGame {
     }
 
     public destroy(): void {
+        this.stopGoldTimer();
         if (this.game) {
             this.game.destroy(true);
         }
@@ -104,7 +106,7 @@ export class BattleArenaGame {
         if (this.currentGameState === GameState.Shop || this.currentGameState === GameState.RoundOver) {
             this.currentRound++;
             this.setCurrentGameState(GameState.Playing);
-            this.gameScene.resetRound();
+            this.gameScene.resetRound(this.currentRound);
             this.startRoundTimer();
             // No need to clear readyPlayers here as it's no longer used for this flow.
             this.updateCallback(this.gameScene.getAlivePlayersCount(), this.currentGameState, this.currentRound, this.getRemainingTime());
@@ -138,6 +140,37 @@ export class BattleArenaGame {
         }
     }
 
+    private startGoldTimer(): void {
+        if (this.goldTimer) {
+            this.goldTimer.remove(false);
+        }
+        // Start a repeating timer that gives 1 gold to all players every 10 seconds
+        if (this.gameScene && this.gameScene.time) {
+            this.goldTimer = this.gameScene.time.addEvent({
+                delay: 10000, // 10 seconds in milliseconds
+                callback: () => this.distributeGoldToPlayers(),
+                callbackScope: this,
+                loop: true
+            });
+        }
+    }
+
+    private stopGoldTimer(): void {
+        if (this.goldTimer) {
+            this.goldTimer.remove(false);
+            this.goldTimer = null;
+        }
+    }
+
+    private distributeGoldToPlayers(): void {
+        if (this.currentGameState === GameState.Playing && this.gameScene) {
+            const players = this.gameScene.getAlivePlayers();
+            players.forEach(player => {
+                player.addGold(1);
+            });
+        }
+    }
+
     private endRoundDueToTime(): void {
         if (this.currentGameState === GameState.Playing) {
             console.log("Round ended due to time limit.");
@@ -161,6 +194,7 @@ export class BattleArenaGame {
                 this.gameScene.scene.resume(GAME_SCENE_KEY);
             }
             this.startRoundTimer();
+            this.startGoldTimer();
         } else if (newState === GameState.Shop) {
             // Pause game scene when entering shop
             if (this.gameScene?.scene && this.gameScene.scene.isActive(GAME_SCENE_KEY) && !this.gameScene.scene.isPaused(GAME_SCENE_KEY)) {
@@ -169,10 +203,16 @@ export class BattleArenaGame {
             if (this.roundTimer) {
                 this.roundTimer.paused = true;
             }
+            if (this.goldTimer) {
+                this.goldTimer.paused = true;
+            }
         } else if (newState !== GameState.Playing && this.roundTimer) {
             // For other non-Playing states like RoundOver, GameOver, ensure timer is paused
             // but don't necessarily pause the scene unless specified (e.g. Game Over might have animations)
             this.roundTimer.paused = true;
+            if (this.goldTimer) {
+                this.goldTimer.paused = true;
+            }
             // If moving from Playing to RoundOver, we might want to keep scene active for a moment for effects,
             // or explicitly pause it if needed. For now, just pausing timer.
             // If it was Shop, scene is already paused. If it's RoundOver from Playing, scene remains active.
@@ -219,6 +259,7 @@ class GameScene extends Phaser.Scene {
 
     private gameEnded: boolean = false;
     private roundOverFlag: boolean = false; // Renamed to avoid conflict, controls round logic within scene
+    private currentRoundNumber: number = 1; // Track current round for enemy spawning
 
 
     constructor(
@@ -363,8 +404,9 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    public resetRound(): void {
+    public resetRound(roundNumber: number): void {
         this.roundOverFlag = false;
+        this.currentRoundNumber = roundNumber;
         
         const gameWidth = this.cameras.main.width;
         const gameHeight = this.cameras.main.height;
@@ -583,34 +625,47 @@ class GameScene extends Phaser.Scene {
         );
         const enemySpawnMargin = margin + borderWidth + maxEnemySize / 2; // Half-size for center positioning
 
-        // Spawn weak enemies (mix of static and moving)
-        for (let i = 0; i < 8; i++) {
-            const x = Phaser.Math.Between(enemySpawnMargin, gameWidth - enemySpawnMargin);
-            const y = Phaser.Math.Between(enemySpawnMargin, gameHeight - enemySpawnMargin);
-            const isStatic = i % 2 === 0; // Alternate between static and moving
-            const config = { ...ENEMY_CONFIGS[EnemyType.Weak], isStatic };
-            const enemy = new Enemy(this, x, y, config);
-            this.enemies.push(enemy);
-        }
-
-        // Spawn medium enemies (mix of static and moving)
-        for (let i = 0; i < 5; i++) {
-            const x = Phaser.Math.Between(enemySpawnMargin, gameWidth - enemySpawnMargin);
-            const y = Phaser.Math.Between(enemySpawnMargin, gameHeight - enemySpawnMargin);
-            const isStatic = i % 3 === 0; // Some static, more moving
-            const config = { ...ENEMY_CONFIGS[EnemyType.Medium], isStatic };
-            const enemy = new Enemy(this, x, y, config);
-            this.enemies.push(enemy);
-        }
-
-        // Spawn strong enemies (mostly moving)
-        for (let i = 0; i < 3; i++) {
-            const x = Phaser.Math.Between(enemySpawnMargin, gameWidth - enemySpawnMargin);
-            const y = Phaser.Math.Between(enemySpawnMargin, gameHeight - enemySpawnMargin);
-            const isStatic = i === 0; // Only first one is static
-            const config = { ...ENEMY_CONFIGS[EnemyType.Strong], isStatic };
-            const enemy = new Enemy(this, x, y, config);
-            this.enemies.push(enemy);
+        if (this.currentRoundNumber === 1) {
+            // Round 1: Start with only easy enemies, doubled from original count (32 instead of 16 total)
+            // Original had 8 weak, so double it to 16 weak enemies
+            for (let i = 0; i < 32; i++) {
+                const x = Phaser.Math.Between(enemySpawnMargin, gameWidth - enemySpawnMargin);
+                const y = Phaser.Math.Between(enemySpawnMargin, gameHeight - enemySpawnMargin);
+                const isStatic = i % 2 === 0; // Alternate between static and moving
+                const config = { ...ENEMY_CONFIGS[EnemyType.Weak], isStatic };
+                const enemy = new Enemy(this, x, y, config);
+                this.enemies.push(enemy);
+            }
+        } else {
+            // Round 2+: Add new enemies based on round number
+            // Randomly choose enemy difficulty
+            const enemyTypes = [EnemyType.Weak, EnemyType.Medium, EnemyType.Strong];
+            const randomType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+            
+            // Determine multiplier based on enemy type
+            let multiplier: number;
+            if (randomType === EnemyType.Weak) {
+                multiplier = 3;
+            } else if (randomType === EnemyType.Medium) {
+                multiplier = 2;
+            } else {
+                multiplier = 1;
+            }
+            
+            // Calculate number of enemies to spawn
+            // Every round increase the number: round 2 = 2 enemies base, round 3 = 3 base, etc.
+            const baseCount = this.currentRoundNumber;
+            const enemiesToSpawn = baseCount * multiplier;
+            
+            // Spawn the enemies
+            for (let i = 0; i < enemiesToSpawn; i++) {
+                const x = Phaser.Math.Between(enemySpawnMargin, gameWidth - enemySpawnMargin);
+                const y = Phaser.Math.Between(enemySpawnMargin, gameHeight - enemySpawnMargin);
+                const isStatic = i % 3 === 0; // Some static, mostly moving
+                const config = { ...ENEMY_CONFIGS[randomType], isStatic };
+                const enemy = new Enemy(this, x, y, config);
+                this.enemies.push(enemy);
+            }
         }
     }
 
