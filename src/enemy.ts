@@ -180,24 +180,14 @@ export class Enemy {
     /**
      * Adjust the enemy's heading by a random angle
      */
-    private adjustHeading(targetAngle?: number): void {
+    private adjustHeading(): void {
         if (this.isStatic) return;
         
         let currentAngle = this.currentVelocity.angle();
         
-        if (targetAngle !== undefined) {
-            // Move towards or away from target angle based on attraction
-            // Blend between current angle and target angle
-            const angleDiff = targetAngle - currentAngle;
-            // Normalize angle difference to -PI to PI range
-            const normalizedDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
-            // Apply influence factor to make it a gradual turn
-            currentAngle += normalizedDiff * ENEMY_CONSTANTS.ATTRACTION_INFLUENCE_FACTOR;
-        } else {
-            // Random adjustment as before
-            const turnAdjustment = (Math.random() * 2 - 1) * ENEMY_CONSTANTS.MAX_TURN_ANGLE_RAD;
-            currentAngle += turnAdjustment;
-        }
+        // Random adjustment
+        const turnAdjustment = (Math.random() * 2 - 1) * ENEMY_CONSTANTS.MAX_TURN_ANGLE_RAD;
+        currentAngle += turnAdjustment;
 
         this.currentVelocity.setToPolar(currentAngle, this.moveSpeed);
     }
