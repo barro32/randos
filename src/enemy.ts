@@ -19,10 +19,6 @@ const ENEMY_CONSTANTS = {
     DEATH_ANIMATION_DURATION_MS: 300,
     SPRITE_BORDER_WIDTH: 2,
     SPRITE_BORDER_COLOR: 0x000000,
-    PLAYER_DETECTION_RANGE: 200, // Range at which enemies detect players
-    ATTRACTION_INFLUENCE_FACTOR: 0.3, // How much attraction affects enemy movement (0-1)
-    MIN_ATTRACTION_THRESHOLD: 0.1, // Minimum attraction strength to influence movement
-    MAX_ATTRACTION_VALUE: 10, // Maximum foe attraction value (matches player's range)
     HEALTH_BAR_WIDTH: 40,
     HEALTH_BAR_HEIGHT: 4,
     HEALTH_BAR_Y_OFFSET: -5,
@@ -184,24 +180,14 @@ export class Enemy {
     /**
      * Adjust the enemy's heading by a random angle
      */
-    private adjustHeading(targetAngle?: number): void {
+    private adjustHeading(): void {
         if (this.isStatic) return;
         
         let currentAngle = this.currentVelocity.angle();
         
-        if (targetAngle !== undefined) {
-            // Move towards or away from target angle based on attraction
-            // Blend between current angle and target angle
-            const angleDiff = targetAngle - currentAngle;
-            // Normalize angle difference to -PI to PI range
-            const normalizedDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
-            // Apply influence factor to make it a gradual turn
-            currentAngle += normalizedDiff * ENEMY_CONSTANTS.ATTRACTION_INFLUENCE_FACTOR;
-        } else {
-            // Random adjustment as before
-            const turnAdjustment = (Math.random() * 2 - 1) * ENEMY_CONSTANTS.MAX_TURN_ANGLE_RAD;
-            currentAngle += turnAdjustment;
-        }
+        // Random adjustment
+        const turnAdjustment = (Math.random() * 2 - 1) * ENEMY_CONSTANTS.MAX_TURN_ANGLE_RAD;
+        currentAngle += turnAdjustment;
 
         this.currentVelocity.setToPolar(currentAngle, this.moveSpeed);
     }
@@ -209,9 +195,8 @@ export class Enemy {
     /**
      * Update enemy state each frame
      * @param time - Current game time in milliseconds
-     * @param nearbyPlayers - Optional array of nearby players to react to
      */
-    public update(time: number, nearbyPlayers?: Array<{ x: number; y: number; foeAttraction: number; isAlive: boolean }>): void {
+    public update(time: number): void {
         if (!this.isAlive) return;
 
         // Update health bar position
@@ -227,52 +212,8 @@ export class Enemy {
             if (body.velocity.lengthSq() < velocityThreshold ** 2) {
                 this.setInitialVelocity();
             } else {
-                // Check for nearby players with attraction
-                let targetAngle: number | undefined = undefined;
-                
-                if (nearbyPlayers && nearbyPlayers.length > 0) {
-                    // Find the player with strongest attraction influence (considering both attraction value and distance)
-                    let strongestInfluence = 0;
-                    let attractionAngle: number | undefined = undefined;
-                    
-                    for (const player of nearbyPlayers) {
-                        if (!player.isAlive || player.foeAttraction === 0) continue;
-                        
-                        const dx = player.x - this.sprite.x;
-                        const dy = player.y - this.sprite.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        
-                        // Only consider players within detection range
-                        if (distance < ENEMY_CONSTANTS.PLAYER_DETECTION_RANGE && distance > 0) {
-                            // Calculate influence: stronger attraction and closer distance = higher influence
-                            // Normalize distance: closer = higher value (1 at distance 0, decreasing to 0 at max range)
-                            const distanceFactor = 1 - (distance / ENEMY_CONSTANTS.PLAYER_DETECTION_RANGE);
-                            const attractionStrength = Math.abs(player.foeAttraction) / ENEMY_CONSTANTS.MAX_ATTRACTION_VALUE; // Normalize to 0-1
-                            const influence = attractionStrength * distanceFactor;
-                            
-                            // Use the player with the strongest influence
-                            if (influence > strongestInfluence) {
-                                strongestInfluence = influence;
-                                const angleToPlayer = Math.atan2(dy, dx);
-                                
-                                if (player.foeAttraction > 0) {
-                                    // Positive attraction - move towards player
-                                    attractionAngle = angleToPlayer;
-                                } else {
-                                    // Negative attraction - move away from player
-                                    attractionAngle = angleToPlayer + Math.PI; // Opposite direction
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Only apply if influence is significant
-                    if (attractionAngle !== undefined && strongestInfluence > ENEMY_CONSTANTS.MIN_ATTRACTION_THRESHOLD) {
-                        targetAngle = attractionAngle;
-                    }
-                }
-                
-                this.adjustHeading(targetAngle);
+                // Random movement adjustment
+                this.adjustHeading();
             }
             this.lastMoveTime = time;
             
