@@ -251,6 +251,49 @@ describe('Player Class', () => {
         });
     });
 
+    describe('Foe Attraction', () => {
+        it('should initialize with zero foe attraction', () => {
+            expect(player.foeAttraction).toBe(0);
+        });
+
+        it('should adjust foe attraction positively', () => {
+            player.adjustFoeAttraction(3);
+            expect(player.foeAttraction).toBe(3);
+            player.adjustFoeAttraction(2);
+            expect(player.foeAttraction).toBe(5);
+        });
+
+        it('should adjust foe attraction negatively', () => {
+            player.adjustFoeAttraction(-4);
+            expect(player.foeAttraction).toBe(-4);
+            player.adjustFoeAttraction(-3);
+            expect(player.foeAttraction).toBe(-7);
+        });
+
+        it('should clamp foe attraction at +10', () => {
+            player.adjustFoeAttraction(8);
+            expect(player.foeAttraction).toBe(8);
+            player.adjustFoeAttraction(5);
+            expect(player.foeAttraction).toBe(10); // Clamped at 10
+        });
+
+        it('should clamp foe attraction at -10', () => {
+            player.adjustFoeAttraction(-8);
+            expect(player.foeAttraction).toBe(-8);
+            player.adjustFoeAttraction(-5);
+            expect(player.foeAttraction).toBe(-10); // Clamped at -10
+        });
+
+        it('should handle mixed positive and negative adjustments', () => {
+            player.adjustFoeAttraction(5);
+            expect(player.foeAttraction).toBe(5);
+            player.adjustFoeAttraction(-3);
+            expect(player.foeAttraction).toBe(2);
+            player.adjustFoeAttraction(-4);
+            expect(player.foeAttraction).toBe(-2);
+        });
+    });
+
     describe('Invulnerability', () => {
         it('should set player as invulnerable', () => {
             player.setInvulnerable(1000);

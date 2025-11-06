@@ -60,6 +60,9 @@ export class Shop {
         if (items.titansBelt) {
             this.availableItems.push({ item: items.titansBelt, quantity: 1 });
         }
+        if (items.foeMagnet) {
+            this.availableItems.push({ item: items.foeMagnet, quantity: 1 });
+        }
     }
 
     /**
@@ -88,9 +91,10 @@ export class Shop {
      * Attempt to purchase an item for a player
      * @param player The player attempting to purchase
      * @param itemArrayIndex The index of the item in the available items array
+     * @param adjustmentValue Optional parameter for items that need additional input (e.g., foeAttraction adjustment)
      * @returns true if purchase was successful, false otherwise
      */
-    public buyItem(player: Player, itemArrayIndex: number): boolean {
+    public buyItem(player: Player, itemArrayIndex: number, adjustmentValue?: number): boolean {
         const shopItem = this.availableItems[itemArrayIndex];
 
         if (!shopItem || shopItem.quantity <= 0) {
@@ -102,7 +106,10 @@ export class Shop {
         }
 
         player.addGold(-shopItem.item.cost);
-        shopItem.item.applyEffect(player);
+        
+        // Apply the item's effect, passing adjustmentValue if provided
+        shopItem.item.applyEffect(player, adjustmentValue);
+        
         player.inventory.push(shopItem.item);
         shopItem.quantity--;
 

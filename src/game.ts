@@ -192,10 +192,10 @@ export class BattleArenaGame {
 
 
     // Method for player to buy an item, called from UI
-    public playerAttemptToBuyItem(player: Player, itemArrayIndex: number): void { // itemIndex changed to itemArrayIndex
+    public playerAttemptToBuyItem(player: Player, itemArrayIndex: number, adjustmentValue?: number): void { // itemIndex changed to itemArrayIndex
         if (this.currentGameState === GameState.Shop && this.shopInstance) {
             // itemArrayIndex is already the 0-based index from the UI display.
-            const bought = this.shopInstance.buyItem(player, itemArrayIndex);
+            const bought = this.shopInstance.buyItem(player, itemArrayIndex, adjustmentValue);
             if (bought) {
                 // Optional: Update player-specific UI in GameScene if needed
                 // Also, the main UI (GameController) will refresh the shop display.
@@ -327,7 +327,16 @@ class GameScene extends Phaser.Scene {
 
     public update(time: number): void {
         this.players.forEach(player => player.update(time));
-        this.enemies.forEach(enemy => enemy.update(time));
+        
+        // Prepare player data for enemy updates
+        const playerData = this.players.map(p => ({
+            x: p.sprite.x,
+            y: p.sprite.y,
+            foeAttraction: p.foeAttraction,
+            isAlive: p.isAlive
+        }));
+        
+        this.enemies.forEach(enemy => enemy.update(time, playerData));
         this.updateUI();
 
         if (!this.gameEnded) {

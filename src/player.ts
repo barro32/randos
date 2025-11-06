@@ -61,6 +61,7 @@ export class Player {
     public healthRegenPercent: number = 0; // Percentage of max health regenerated periodically (0-1)
     private lastRegenTime: number = 0;
     private regenInterval: number = 10000; // 10 seconds
+    public foeAttraction: number = 0; // How much foes are attracted (+) or repelled (-) by this player (-10 to +10)
 
     constructor(scene: Phaser.Scene, x: number, y: number, id: string, color: number) {
         this.scene = scene;
@@ -290,6 +291,14 @@ export class Player {
     public increaseMaxHealth(amount: number): void {
         this.maxHealth += amount;
         this.health += amount; // Also increase current health by the same amount
+    }
+
+    /**
+     * Adjust the player's foe attraction value
+     * @param amount - Amount to adjust foe attraction by (clamped to -10 to +10 range)
+     */
+    public adjustFoeAttraction(amount: number): void {
+        this.foeAttraction = Math.max(-10, Math.min(10, this.foeAttraction + amount));
     }
 
     /**
