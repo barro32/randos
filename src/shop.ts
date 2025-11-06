@@ -61,9 +61,9 @@ export class Shop {
         if (items.titansBelt) {
             this.availableItems.push({ item: items.titansBelt, quantity: 1 + bonusQuantity });
         }
-        if (items.foeMagnet) {
+        if (items.fightOrFlight) {
             // Free adjustment available for each player every round
-            this.availableItems.push({ item: items.foeMagnet, quantity: playerCount });
+            this.availableItems.push({ item: items.fightOrFlight, quantity: playerCount });
         }
     }
 
@@ -93,7 +93,7 @@ export class Shop {
      * Attempt to purchase an item for a player
      * @param player The player attempting to purchase
      * @param itemArrayIndex The index of the item in the available items array
-     * @param adjustmentValue Optional parameter for items that need additional input (e.g., foeAttraction adjustment)
+     * @param adjustmentValue Optional parameter for items that need additional input (e.g., fightOrFlight adjustment)
      * @returns true if purchase was successful, false otherwise
      */
     public buyItem(player: Player, itemArrayIndex: number, adjustmentValue?: number): boolean {

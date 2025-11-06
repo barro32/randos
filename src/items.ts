@@ -110,16 +110,16 @@ export const items: { [key: string]: Item } = {
             player.healthRegenPercent = Math.min(1, player.healthRegenPercent + 0.01);
         }
     },
-    foeMagnet: {
-        name: "Foe Magnet",
-        description: "Adjust foe attraction +1 to +10 (attract) or -1 to -10 (repel). Free.",
-        icon: "🧲",
+    fightOrFlight: {
+        name: "Fight or Flight",
+        description: "Adjust fight or flight +1 to +10 (fight) or -1 to -10 (flight). Free.",
+        icon: "🏃",
         cost: 0,
         requiresAdjustmentValue: true,
         applyEffect: (player, adjustmentValue = 1) => {
-            // Adjust player's foe attraction by the specified value (default +1)
+            // Adjust player's fight or flight by the specified value (default +1)
             // The UI provides +1 or -1 based on which button the player clicks
-            player.adjustFoeAttraction(adjustmentValue);
+            player.adjustFightOrFlight(adjustmentValue);
         }
     }
 };

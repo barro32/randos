@@ -369,17 +369,16 @@ class GameScene extends Phaser.Scene {
     }
 
     public update(time: number): void {
-        this.players.forEach(player => player.update(time));
-        
-        // Prepare player data for enemy updates
-        const playerData = this.players.map(p => ({
-            x: p.sprite.x,
-            y: p.sprite.y,
-            foeAttraction: p.foeAttraction,
-            isAlive: p.isAlive
+        // Prepare enemy data for player updates
+        const enemyData = this.enemies.map(e => ({
+            x: e.sprite.x,
+            y: e.sprite.y,
+            isAlive: e.isAlive
         }));
         
-        this.enemies.forEach(enemy => enemy.update(time, playerData));
+        this.players.forEach(player => player.update(time, enemyData));
+        
+        this.enemies.forEach(enemy => enemy.update(time));
         this.updateUI();
 
         if (!this.gameEnded) {
