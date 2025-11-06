@@ -4,6 +4,8 @@ import { Shop } from './shop'; // Import the Shop class
 import { Enemy, EnemyType, ENEMY_CONFIGS } from './enemy'; // Import Enemy class and related types
 
 const GAME_SCENE_KEY = 'GameScene';
+const GOLD_DISTRIBUTION_INTERVAL = 10000; // 10 seconds in milliseconds
+const GOLD_PER_DISTRIBUTION = 1; // Amount of gold given to each player every interval
 
 export enum GameState {
     Playing,
@@ -144,10 +146,10 @@ export class BattleArenaGame {
         if (this.goldTimer) {
             this.goldTimer.remove(false);
         }
-        // Start a repeating timer that gives 1 gold to all players every 10 seconds
+        // Start a repeating timer that gives gold to all players every interval
         if (this.gameScene && this.gameScene.time) {
             this.goldTimer = this.gameScene.time.addEvent({
-                delay: 10000, // 10 seconds in milliseconds
+                delay: GOLD_DISTRIBUTION_INTERVAL,
                 callback: () => this.distributeGoldToPlayers(),
                 callbackScope: this,
                 loop: true
@@ -166,7 +168,7 @@ export class BattleArenaGame {
         if (this.currentGameState === GameState.Playing && this.gameScene) {
             const players = this.gameScene.getAlivePlayers();
             players.forEach(player => {
-                player.addGold(1);
+                player.addGold(GOLD_PER_DISTRIBUTION);
             });
         }
     }
@@ -630,7 +632,9 @@ class GameScene extends Phaser.Scene {
         const enemySpawnMargin = margin + borderWidth + maxEnemySize / 2; // Half-size for center positioning
 
         if (this.currentRoundNumber === 1) {
-            // Round 1: Start with only easy enemies, doubled from original count (32 instead of 16 total)
+            // Round 1: Start with only easy enemies, doubled from original count
+            // Original enemy distribution was 8 weak + 5 medium + 3 strong = 16 total
+            // Now spawning 32 weak enemies only (2x the original total count)
             for (let i = 0; i < 32; i++) {
                 const x = Phaser.Math.Between(enemySpawnMargin, gameWidth - enemySpawnMargin);
                 const y = Phaser.Math.Between(enemySpawnMargin, gameHeight - enemySpawnMargin);
@@ -646,14 +650,12 @@ class GameScene extends Phaser.Scene {
             const randomType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
             
             // Determine multiplier based on enemy type
-            let multiplier: number;
-            if (randomType === EnemyType.Weak) {
-                multiplier = 3;
-            } else if (randomType === EnemyType.Medium) {
-                multiplier = 2;
-            } else {
-                multiplier = 1;
-            }
+            const enemyMultipliers: Record<EnemyType, number> = {
+                [EnemyType.Weak]: 3,
+                [EnemyType.Medium]: 2,
+                [EnemyType.Strong]: 1
+            };
+            const multiplier = enemyMultipliers[randomType];
             
             // Calculate number of enemies to spawn
             // Every round increase the number: round 2 = 2 enemies base, round 3 = 3 base, etc.
