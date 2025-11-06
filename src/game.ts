@@ -562,7 +562,7 @@ class GameScene extends Phaser.Scene {
             const damage1ToPlayer2 = player1.dealDamage(player2, player1.attackDamage);
             player2.takeDamage(player1.attackDamage);
             
-            // Check if player2 died and give gold to player1
+            // Check if player2 died and give gold and XP to player1
             if (victimWasAlive && !player2.isAlive && player1.isAlive) {
                 let goldReward = victimGold + 5;
                 // Check for double gold chance
@@ -570,6 +570,8 @@ class GameScene extends Phaser.Scene {
                     goldReward *= 2;
                 }
                 player1.addGold(goldReward);
+                // Grant XP for killing a player (50 XP)
+                player1.addXP(50);
             }
             
             // Check if player1 died before player2 takes damage or vice-versa, to avoid errors if sprite/body is gone
@@ -580,7 +582,7 @@ class GameScene extends Phaser.Scene {
                 const damage2ToPlayer1 = player2.dealDamage(player1, player2.attackDamage);
                 player1.takeDamage(player2.attackDamage);
                 
-                // Check if player1 died and give gold to player2
+                // Check if player1 died and give gold and XP to player2
                 if (player2WasAlive && !player1.isAlive && player2.isAlive) {
                     let goldReward = player1Gold + 5;
                     // Check for double gold chance
@@ -588,6 +590,8 @@ class GameScene extends Phaser.Scene {
                         goldReward *= 2;
                     }
                     player2.addGold(goldReward);
+                    // Grant XP for killing a player (50 XP)
+                    player2.addXP(50);
                 }
             }
 
@@ -696,7 +700,7 @@ class GameScene extends Phaser.Scene {
             player.dealDamage(enemy, player.attackDamage);
             enemy.takeDamage(player.attackDamage);
             
-            // Check if enemy died and give gold to player
+            // Check if enemy died and give gold and XP to player
             if (enemyWasAlive && !enemy.isAlive && player.isAlive) {
                 let goldReward = enemy.goldReward;
                 // Check for double gold chance
@@ -704,6 +708,8 @@ class GameScene extends Phaser.Scene {
                     goldReward *= 2;
                 }
                 player.addGold(goldReward);
+                // Grant XP for killing the enemy
+                player.addXP(enemy.xpReward);
             }
 
             // Set player invulnerable for a short duration

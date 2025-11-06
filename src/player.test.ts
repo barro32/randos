@@ -349,6 +349,124 @@ describe('Player Class', () => {
         });
     });
 
+    describe('Leveling System', () => {
+        it('should initialize with level 1 and 0 XP', () => {
+            expect(player.level).toBe(1);
+            expect(player.xp).toBe(0);
+            expect(player.xpToNextLevel).toBe(100);
+            expect(player.availableStatPoints).toBe(0);
+        });
+
+        it('should gain XP and not level up if below threshold', () => {
+            player.addXP(50);
+            expect(player.xp).toBe(50);
+            expect(player.level).toBe(1);
+            expect(player.availableStatPoints).toBe(0);
+        });
+
+        it('should level up when reaching XP threshold', () => {
+            player.addXP(100);
+            expect(player.level).toBe(2);
+            expect(player.xp).toBe(0);
+            expect(player.availableStatPoints).toBe(3);
+            expect(player.xpToNextLevel).toBe(110); // 10% increase
+        });
+
+        it('should handle multiple level ups in one XP gain', () => {
+            player.addXP(250); // Should level up twice (100 + 110 = 210)
+            expect(player.level).toBe(3);
+            expect(player.xp).toBe(40); // 250 - 100 - 110 = 40
+            expect(player.availableStatPoints).toBe(6); // 3 points per level * 2 levels
+        });
+
+        it('should increase XP requirement by 10% each level', () => {
+            player.addXP(100); // Level 2
+            expect(player.xpToNextLevel).toBe(110);
+            player.addXP(110); // Level 3
+            expect(player.xpToNextLevel).toBe(121); // 110 * 1.1 = 121
+        });
+
+        it('should not gain XP when dead', () => {
+            player.isAlive = false;
+            player.addXP(100);
+            expect(player.xp).toBe(0);
+            expect(player.level).toBe(1);
+        });
+
+        it('should allocate stat point to damage', () => {
+            player.availableStatPoints = 3;
+            const initialDamage = player.attackDamage;
+            const result = player.allocateStatPoint('damage');
+            expect(result).toBe(true);
+            expect(player.attackDamage).toBe(initialDamage + 5);
+            expect(player.availableStatPoints).toBe(2);
+        });
+
+        it('should allocate stat point to speed', () => {
+            player.availableStatPoints = 3;
+            const initialSpeed = player.moveSpeed;
+            const result = player.allocateStatPoint('speed');
+            expect(result).toBe(true);
+            expect(player.moveSpeed).toBe(initialSpeed + 5);
+            expect(player.availableStatPoints).toBe(2);
+        });
+
+        it('should allocate stat point to health', () => {
+            player.availableStatPoints = 3;
+            const initialMaxHealth = player.maxHealth;
+            const initialHealth = player.health;
+            const result = player.allocateStatPoint('health');
+            expect(result).toBe(true);
+            expect(player.maxHealth).toBe(initialMaxHealth + 20);
+            expect(player.health).toBe(initialHealth + 20);
+            expect(player.availableStatPoints).toBe(2);
+        });
+
+        it('should not allocate stat point when none available', () => {
+            player.availableStatPoints = 0;
+            const initialDamage = player.attackDamage;
+            const result = player.allocateStatPoint('damage');
+            expect(result).toBe(false);
+            expect(player.attackDamage).toBe(initialDamage);
+        });
+
+        it('should gain XP over time (1 XP per second)', () => {
+            mockScene.time.now = 1000;
+            player.updateXPGain(1000);
+            
+            mockScene.time.now = 2000;
+            player.updateXPGain(2000);
+            
+            expect(player.xp).toBe(1);
+            
+            mockScene.time.now = 3000;
+            player.updateXPGain(3000);
+            
+            expect(player.xp).toBe(2);
+        });
+
+        it('should gain multiple XP if more than 1 second has passed', () => {
+            mockScene.time.now = 1000;
+            player.updateXPGain(1000);
+            
+            mockScene.time.now = 4000; // 3 seconds later
+            player.updateXPGain(4000);
+            
+            expect(player.xp).toBe(3);
+        });
+
+        it('should not gain XP over time when dead', () => {
+            player.isAlive = false;
+            mockScene.time.now = 1000;
+            player.updateXPGain(1000);
+            
+            mockScene.time.now = 2000;
+            player.updateXPGain(2000);
+            
+            expect(player.xp).toBe(0);
+        });
+    });
+
     describe('Destroy', () => {
         it('should destroy the sprite', () => {
             player.destroy();
