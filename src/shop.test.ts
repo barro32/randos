@@ -143,7 +143,7 @@ describe('Shop Class', () => {
         });
 
         it('should not allow buying an item if player has insufficient gold', () => {
-            mockPlayer1.gold = 5; // Not enough for a sword (cost 10)
+            mockPlayer1.gold = 2; // Not enough for a sword (cost 5)
 
             const swordShopItemIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Sword");
             const result = shop.buyItem(mockPlayer1, swordShopItemIndex);
