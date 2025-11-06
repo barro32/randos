@@ -745,7 +745,7 @@ class GameScene extends Phaser.Scene {
             this.playerUIContainers.push(uiContainer);
 
             // Player label (name) - position relative to container
-            const label = this.add.text(0, -uiElementOffset -10, player.id, { // Positioned above the sprite
+            const label = this.add.text(0, -uiElementOffset -10, `${player.id} [Lv.${player.level}]`, { // Positioned above the sprite
                 fontSize: '12px',
                 color: '#ffffff',
                 align: 'center'
@@ -821,6 +821,8 @@ class GameScene extends Phaser.Scene {
             // Update gold display (already positioned relative to container)
             if (player.isAlive) {
                 goldText.setText(`${player.getGold()}g`);
+                // Update player label with current level
+                label.setText(`${player.id} [Lv.${player.level}]`);
             }
 
             // Update player inventory icons (already positioned relative to container)
