@@ -183,6 +183,10 @@ class GameController {
         const playerStatsDisplay = document.getElementById('playerStatsDisplay');
         if (playerStatsDisplay) {
             playerStatsDisplay.innerHTML = `
+                <div style="border-bottom: 1px solid #34495e; padding-bottom: 8px; margin-bottom: 8px;">
+                    <strong>Level ${currentPlayer.level}</strong> | XP: ${currentPlayer.xp}/${currentPlayer.xpToNextLevel}
+                    ${currentPlayer.availableStatPoints > 0 ? `<br><span style="color: #2ecc71;">Available Stat Points: ${currentPlayer.availableStatPoints}</span>` : ''}
+                </div>
                 <div><strong>Attack Damage:</strong> ${currentPlayer.attackDamage}</div>
                 <div><strong>Defense:</strong> ${currentPlayer.defense}</div>
                 <div><strong>Move Speed:</strong> ${currentPlayer.moveSpeed}</div>
@@ -190,6 +194,54 @@ class GameController {
                 <div><strong>Lifesteal:</strong> ${(currentPlayer.lifestealPercent * 100).toFixed(0)}%</div>
                 <div><strong>Health Regen:</strong> ${(currentPlayer.healthRegenPercent * 100).toFixed(1)}%/10s</div>
             `;
+        }
+
+        // Display stat point allocation buttons if player has points available
+        const statPointSection = document.getElementById('statPointSection');
+        if (statPointSection) {
+            if (currentPlayer.availableStatPoints > 0) {
+                statPointSection.innerHTML = `
+                    <h4 style="margin-top: 15px; margin-bottom: 10px; color: #2ecc71;">Allocate Stat Points (${currentPlayer.availableStatPoints} available)</h4>
+                    <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                        <button id="allocateDamageButton" style="background-color: #e74c3c; font-size: 0.85em; padding: 8px 12px;">+5 Damage</button>
+                        <button id="allocateSpeedButton" style="background-color: #3498db; font-size: 0.85em; padding: 8px 12px;">+5 Speed</button>
+                        <button id="allocateHealthButton" style="background-color: #2ecc71; font-size: 0.85em; padding: 8px 12px;">+20 Health</button>
+                    </div>
+                `;
+                statPointSection.classList.remove('hidden');
+
+                // Add event listeners for stat allocation buttons
+                const allocateDamageButton = document.getElementById('allocateDamageButton') as HTMLButtonElement;
+                const allocateSpeedButton = document.getElementById('allocateSpeedButton') as HTMLButtonElement;
+                const allocateHealthButton = document.getElementById('allocateHealthButton') as HTMLButtonElement;
+
+                if (allocateDamageButton) {
+                    allocateDamageButton.addEventListener('click', () => {
+                        if (currentPlayer.allocateStatPoint('damage')) {
+                            this.displayShopUI();
+                        }
+                    });
+                }
+
+                if (allocateSpeedButton) {
+                    allocateSpeedButton.addEventListener('click', () => {
+                        if (currentPlayer.allocateStatPoint('speed')) {
+                            this.displayShopUI();
+                        }
+                    });
+                }
+
+                if (allocateHealthButton) {
+                    allocateHealthButton.addEventListener('click', () => {
+                        if (currentPlayer.allocateStatPoint('health')) {
+                            this.displayShopUI();
+                        }
+                    });
+                }
+            } else {
+                statPointSection.innerHTML = '';
+                statPointSection.classList.add('hidden');
+            }
         }
 
         // Setup Fight or Flight adjuster
