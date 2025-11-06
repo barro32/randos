@@ -19,10 +19,6 @@ const ENEMY_CONSTANTS = {
     DEATH_ANIMATION_DURATION_MS: 300,
     SPRITE_BORDER_WIDTH: 2,
     SPRITE_BORDER_COLOR: 0x000000,
-    PLAYER_DETECTION_RANGE: 200, // Range at which enemies detect players
-    ATTRACTION_INFLUENCE_FACTOR: 0.3, // How much attraction affects enemy movement (0-1)
-    MIN_ATTRACTION_THRESHOLD: 0.1, // Minimum attraction strength to influence movement
-    MAX_ATTRACTION_VALUE: 10, // Maximum foe attraction value (matches player's range)
     HEALTH_BAR_WIDTH: 40,
     HEALTH_BAR_HEIGHT: 4,
     HEALTH_BAR_Y_OFFSET: -5,

@@ -26,7 +26,12 @@ const PLAYER_CONSTANTS = {
     DEAD_COLOR: 0x666666,
     DEAD_ALPHA: 0.5,
     INVULNERABLE_ALPHA: 0.7,
-    MIN_SPEED_FACTOR: 0.1
+    MIN_SPEED_FACTOR: 0.1,
+    // Fight or Flight constants
+    FIGHT_OR_FLIGHT_BASE_RANGE: 100, // Base detection range for enemies
+    FIGHT_OR_FLIGHT_MAX_RANGE: 400, // Maximum detection range at +/-10
+    FIGHT_OR_FLIGHT_MAX_SPEED_BOOST: 0.5, // Maximum speed boost (50% at +/-10)
+    FIGHT_OR_FLIGHT_TURN_SMOOTHING: 0.5 // How smoothly player turns toward/away from enemy
 } as const;
 
 /**
@@ -191,9 +196,8 @@ export class Player {
             if (closestEnemy) {
                 // Calculate base detection range (increases with stat magnitude)
                 const statMagnitude = Math.abs(this.fightOrFlight);
-                const baseRange = 100; // Base detection range
-                const maxRange = 400; // Maximum detection range at +/-10
-                const detectionRange = baseRange + (maxRange - baseRange) * (statMagnitude / 10);
+                const detectionRange = PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_BASE_RANGE + 
+                    (PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_MAX_RANGE - PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_BASE_RANGE) * (statMagnitude / 10);
                 
                 // Only react to enemies within detection range
                 if (closestDistance < detectionRange) {
@@ -210,7 +214,7 @@ export class Player {
                     }
                     
                     // Apply speed boost based on stat magnitude
-                    const speedBoostFactor = 1 + (statMagnitude / 10) * 0.5; // Up to 50% speed boost at max
+                    const speedBoostFactor = 1 + (statMagnitude / 10) * PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_MAX_SPEED_BOOST;
                     const boostedSpeed = this.moveSpeed * speedBoostFactor;
                     
                     // Blend between current angle and target angle based on stat magnitude
@@ -219,7 +223,7 @@ export class Player {
                     // Normalize angle difference to -PI to PI range
                     const normalizedDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
                     // Apply influence factor for gradual turn (stronger at higher stat values)
-                    currentAngle += normalizedDiff * influenceFactor * 0.5;
+                    currentAngle += normalizedDiff * influenceFactor * PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_TURN_SMOOTHING;
                     
                     // Set velocity with boosted speed
                     this.currentVelocity.setToPolar(currentAngle, boostedSpeed);
