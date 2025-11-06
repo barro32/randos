@@ -6,6 +6,7 @@ class GameController {
     private playerCount: number = 2; // Default player count
     private currentPlayerIndexForShop: number = 0; // Added for shopping turns
     private sortedPlayersForShop: Player[] = []; // Added for sorted shopping order
+    private playerFightOrFlightAdjustments: Map<string, number> = new Map(); // Track adjustments per round per player
 
     // UI Elements
     private startButton: HTMLButtonElement;
@@ -101,6 +102,7 @@ class GameController {
     private goToShop(): void {
         if (this.game && this.game.gameScene) {
             this.currentPlayerIndexForShop = 0; // Reset for the first player
+            this.playerFightOrFlightAdjustments.clear(); // Clear adjustments for new round
             const alivePlayers = this.game.gameScene.getAlivePlayers();
             if (alivePlayers) {
                 this.sortedPlayersForShop = this.sortPlayersByGold(alivePlayers);
@@ -167,20 +169,77 @@ class GameController {
         }
 
         // Display Player Health, Gold, and Inventory
-        const playerInfoElement = document.getElementById('playerShopInfo'); // Assuming an element with this ID exists for this
+        const playerInfoElement = document.getElementById('playerShopInfo');
         if (playerInfoElement) {
             const inventoryIcons = currentPlayer.inventory.map(item => item.icon).join(' ');
             playerInfoElement.innerHTML = `
                 Health: ${currentPlayer.health}/${currentPlayer.maxHealth} | Gold: ${currentPlayer.getGold()}
                 <br>
-                Fight or Flight: ${currentPlayer.fightOrFlight} (${currentPlayer.fightOrFlight > 0 ? 'Fight' : currentPlayer.fightOrFlight < 0 ? 'Flight' : 'Neutral'})
-                <br>
                 Inventory: ${inventoryIcons || 'Empty'}
             `;
         }
 
+        // Display Player Stats Section
+        const playerStatsDisplay = document.getElementById('playerStatsDisplay');
+        if (playerStatsDisplay) {
+            playerStatsDisplay.innerHTML = `
+                <div><strong>Attack Damage:</strong> ${currentPlayer.attackDamage}</div>
+                <div><strong>Defense:</strong> ${currentPlayer.defense}</div>
+                <div><strong>Move Speed:</strong> ${currentPlayer.moveSpeed}</div>
+                <div><strong>Double Gold Chance:</strong> ${(currentPlayer.doubleGoldChance * 100).toFixed(0)}%</div>
+                <div><strong>Lifesteal:</strong> ${(currentPlayer.lifestealPercent * 100).toFixed(0)}%</div>
+                <div><strong>Health Regen:</strong> ${(currentPlayer.healthRegenPercent * 100).toFixed(1)}%/10s</div>
+            `;
+        }
 
-        this.playerGoldDisplayElement.textContent = `Gold: ${currentPlayer.getGold()}`; // This might be redundant if playerShopInfo is comprehensive
+        // Setup Fight or Flight adjuster
+        const fightOrFlightValue = document.getElementById('fightOrFlightValue');
+        const decreaseButton = document.getElementById('decreaseFightOrFlightButton') as HTMLButtonElement;
+        const increaseButton = document.getElementById('increaseFightOrFlightButton') as HTMLButtonElement;
+
+        if (fightOrFlightValue && decreaseButton && increaseButton) {
+            // Get the current adjustment for this player this round
+            const currentAdjustment = this.playerFightOrFlightAdjustments.get(currentPlayer.id) || 0;
+            
+            // Display current fight or flight value with indicator
+            const fofValue = currentPlayer.fightOrFlight;
+            let fofLabel = 'Neutral';
+            if (fofValue > 0) fofLabel = `Fight +${fofValue}`;
+            else if (fofValue < 0) fofLabel = `Flight ${fofValue}`;
+            fightOrFlightValue.textContent = fofLabel;
+
+            // Enable/disable buttons based on limits and whether adjustment was already made
+            const canDecrease = currentPlayer.fightOrFlight > -10 && currentAdjustment === 0;
+            const canIncrease = currentPlayer.fightOrFlight < 10 && currentAdjustment === 0;
+            
+            decreaseButton.disabled = !canDecrease;
+            increaseButton.disabled = !canIncrease;
+
+            // Remove existing event listeners by cloning nodes
+            const newDecreaseButton = decreaseButton.cloneNode(true) as HTMLButtonElement;
+            const newIncreaseButton = increaseButton.cloneNode(true) as HTMLButtonElement;
+            decreaseButton.parentNode?.replaceChild(newDecreaseButton, decreaseButton);
+            increaseButton.parentNode?.replaceChild(newIncreaseButton, increaseButton);
+
+            // Add new event listeners
+            newDecreaseButton.addEventListener('click', () => {
+                if (canDecrease) {
+                    currentPlayer.adjustFightOrFlight(-1);
+                    this.playerFightOrFlightAdjustments.set(currentPlayer.id, -1);
+                    this.displayShopUI();
+                }
+            });
+
+            newIncreaseButton.addEventListener('click', () => {
+                if (canIncrease) {
+                    currentPlayer.adjustFightOrFlight(1);
+                    this.playerFightOrFlightAdjustments.set(currentPlayer.id, 1);
+                    this.displayShopUI();
+                }
+            });
+        }
+
+        this.playerGoldDisplayElement.textContent = `Gold: ${currentPlayer.getGold()}`;
         this.shopItemsContainer.innerHTML = ''; // Clear previous items
 
         const items = shop.getAvailableItems();
@@ -198,53 +257,21 @@ class GameController {
                     <p>Cost: ${shopItem.item.cost} Gold | Qty: ${shopItem.quantity}</p>
                 `;
 
-                // Special handling for Fight or Flight - show +/- buttons
-                if (shopItem.item.requiresAdjustmentValue) {
-                    const buttonContainer = document.createElement('div');
-                    buttonContainer.style.display = 'flex';
-                    buttonContainer.style.gap = '5px';
-                    
-                    const buyMinusButton = document.createElement('button');
-                    buyMinusButton.textContent = 'Buy (-1 Flight)';
-                    buyMinusButton.disabled = currentPlayer.getGold() < shopItem.item.cost || currentPlayer.fightOrFlight === -10;
-                    buyMinusButton.onclick = () => {
-                        if (this.game) {
-                            this.game.playerAttemptToBuyItem(currentPlayer, index, -1);
-                            this.displayShopUI();
-                        }
-                    };
-                    
-                    const buyPlusButton = document.createElement('button');
-                    buyPlusButton.textContent = 'Buy (+1 Fight)';
-                    buyPlusButton.disabled = currentPlayer.getGold() < shopItem.item.cost || currentPlayer.fightOrFlight === 10;
-                    buyPlusButton.onclick = () => {
-                        if (this.game) {
-                            this.game.playerAttemptToBuyItem(currentPlayer, index, 1);
-                            this.displayShopUI();
-                        }
-                    };
-                    
-                    buttonContainer.appendChild(buyMinusButton);
-                    buttonContainer.appendChild(buyPlusButton);
-                    itemElement.appendChild(itemInfo);
-                    itemElement.appendChild(buttonContainer);
-                } else {
-                    // Regular buy button for other items
-                    const buyButton = document.createElement('button');
-                    buyButton.textContent = 'Buy';
-                    buyButton.disabled = currentPlayer.getGold() < shopItem.item.cost;
-                    buyButton.onclick = () => {
-                        if (this.game) {
-                            // Pass the actual player object and item's original index (or unique ID)
-                            this.game.playerAttemptToBuyItem(currentPlayer, index); // Adjust index if needed by shop logic
-                            this.displayShopUI(); // Refresh shop UI
-                            // Potentially update player gold in main game UI as well if visible
-                        }
-                    };
+                // Regular buy button for all items (no special handling needed anymore)
+                const buyButton = document.createElement('button');
+                buyButton.textContent = 'Buy';
+                buyButton.disabled = currentPlayer.getGold() < shopItem.item.cost;
+                buyButton.onclick = () => {
+                    if (this.game) {
+                        // Pass the actual player object and item's original index (or unique ID)
+                        this.game.playerAttemptToBuyItem(currentPlayer, index); // Adjust index if needed by shop logic
+                        this.displayShopUI(); // Refresh shop UI
+                        // Potentially update player gold in main game UI as well if visible
+                    }
+                };
 
-                    itemElement.appendChild(itemInfo);
-                    itemElement.appendChild(buyButton);
-                }
+                itemElement.appendChild(itemInfo);
+                itemElement.appendChild(buyButton);
                 
                 this.shopItemsContainer.appendChild(itemElement);
             }

@@ -126,6 +126,9 @@ export class Player {
             this.lastRegenTime = time;
         }
 
+        // Update outline color based on fight or flight state and enemy proximity
+        this.updateOutlineColor(nearbyEnemies);
+
         // Periodically adjust heading
         if (time - this.lastMoveTime > this.moveInterval) {
             const body = this.sprite.body as Phaser.Physics.Arcade.Body;
@@ -164,6 +167,59 @@ export class Player {
     private setInitialVelocity(): void {
         const initialAngle = Math.random() * Math.PI * 2;
         this.currentVelocity.setToPolar(initialAngle, this.moveSpeed);
+    }
+
+    /**
+     * Update the player's outline color based on fight or flight state and enemy proximity
+     * @param nearbyEnemies - Optional array of nearby enemies to react to
+     */
+    private updateOutlineColor(nearbyEnemies?: Array<{ x: number; y: number; isAlive: boolean }>): void {
+        // Default to white outline
+        let outlineColor = 0xffffff;
+
+        // Check if player has fight or flight response active
+        if (this.fightOrFlight !== 0 && nearbyEnemies && nearbyEnemies.length > 0) {
+            // Find the closest alive enemy
+            let closestDistance = Infinity;
+            let hasCloseEnemy = false;
+            
+            for (const enemy of nearbyEnemies) {
+                if (!enemy.isAlive) continue;
+                
+                const dx = enemy.x - this.sprite.x;
+                const dy = enemy.y - this.sprite.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                }
+            }
+            
+            // Calculate detection range based on stat magnitude
+            const statMagnitude = Math.abs(this.fightOrFlight);
+            const detectionRange = PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_BASE_RANGE + 
+                (PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_MAX_RANGE - PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_BASE_RANGE) * 
+                (statMagnitude / PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_MAX_STAT_VALUE);
+            
+            // Check if closest enemy is within detection range
+            if (closestDistance < detectionRange) {
+                hasCloseEnemy = true;
+            }
+            
+            // Set outline color based on fight or flight state if enemy is nearby
+            if (hasCloseEnemy) {
+                if (this.fightOrFlight > 0) {
+                    // Positive: fight mode (red outline)
+                    outlineColor = 0xff0000;
+                } else {
+                    // Negative: flight mode (orange outline)
+                    outlineColor = 0xffa500;
+                }
+            }
+        }
+
+        // Apply the outline color
+        this.sprite.setStrokeStyle(PLAYER_CONSTANTS.SPRITE_BORDER_WIDTH, outlineColor);
     }
 
     /**

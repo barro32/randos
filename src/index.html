@@ -217,6 +217,19 @@
     <div id="shopOverlay" class="hidden">
         <h2 id="shopTitle">Shop</h2> <!-- Added id for dynamic title -->
         <div id="playerShopInfo" style="margin-bottom: 15px;">Player Health & Inventory</div> <!-- Added this line -->
+        
+        <!-- Player Stats Section -->
+        <div id="playerStatsSection" style="background-color: #1a252f; padding: 15px; margin-bottom: 15px; border-radius: 5px;">
+            <h3 style="margin-top: 0; margin-bottom: 10px; color: #3498db;">Player Stats</h3>
+            <div id="playerStatsDisplay" style="font-size: 0.9em; text-align: left; margin-bottom: 10px;"></div>
+            <div id="fightOrFlightAdjuster" style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 10px;">
+                <button id="decreaseFightOrFlightButton" style="background-color: #e67e22; font-size: 0.9em; padding: 8px 12px;">-1 Flight (←)</button>
+                <span id="fightOrFlightValue" style="font-weight: bold; min-width: 80px; text-align: center;">0</span>
+                <button id="increaseFightOrFlightButton" style="background-color: #c0392b; font-size: 0.9em; padding: 8px 12px;">+1 Fight (→)</button>
+            </div>
+            <div style="font-size: 0.75em; color: #95a5a6; margin-top: 5px; text-align: center;">You can adjust your Fight or Flight stat by ±1 each round (free)</div>
+        </div>
+        
         <div id="shopItems"></div>
         <div id="playerGoldDisplay">Player Gold: 0</div>
         <button id="finishShoppingButton">Finish Shopping</button> <!-- Added Finish Shopping button -->
