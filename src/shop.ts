@@ -34,7 +34,7 @@ export class Shop {
         if (items.healthPotion) {
             this.availableItems.push({
                 item: items.healthPotion,
-                quantity: 0 + bonusQuantity
+                quantity: bonusQuantity
             });
         }
 
