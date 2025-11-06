@@ -126,4 +126,40 @@ export class Shop {
         this.availableItems = [];
         this.initializeShopItems(playerCount);
     }
+
+    /**
+     * Add random items to the shop
+     * @param count Number of random items to add
+     */
+    public addRandomItems(count: number): void {
+        if (count <= 0) return;
+
+        // Get all purchasable items (excluding free items and removed/unavailable items)
+        const purchasableItems = Object.values(items).filter(
+            item => item.cost > 0 && 
+                    item.cost < 999 && // Exclude removed items marked with high cost
+                    !item.description.includes("Removed") // Exclude items marked as removed
+        );
+
+        if (purchasableItems.length === 0) return;
+
+        for (let i = 0; i < count; i++) {
+            // Select a random item
+            const randomItem = purchasableItems[Math.floor(Math.random() * purchasableItems.length)];
+            
+            // Find if this item already exists in the shop
+            const existingShopItem = this.availableItems.find(si => si.item.name === randomItem.name);
+            
+            if (existingShopItem) {
+                // If it exists, increase quantity
+                existingShopItem.quantity += 1;
+            } else {
+                // If it doesn't exist, add it with quantity 1
+                this.availableItems.push({
+                    item: randomItem,
+                    quantity: 1
+                });
+            }
+        }
+    }
 }
