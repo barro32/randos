@@ -134,9 +134,11 @@ export class Shop {
     public addRandomItems(count: number): void {
         if (count <= 0) return;
 
-        // Get all purchasable items (excluding free items and removed items)
+        // Get all purchasable items (excluding free items and removed/unavailable items)
         const purchasableItems = Object.values(items).filter(
-            item => item.cost > 0 && item.name !== "Gold Magnet"
+            item => item.cost > 0 && 
+                    item.cost < 999 && // Exclude removed items marked with high cost
+                    !item.description.includes("Removed") // Exclude items marked as removed
         );
 
         if (purchasableItems.length === 0) return;
