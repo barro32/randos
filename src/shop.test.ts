@@ -361,9 +361,9 @@ describe('Shop Class', () => {
             const freeItems = shop.getAvailableItems().filter(item => item.item.cost === 0);
             
             // All added items should be purchasable, so free items should remain at their initial quantity
-            // Initial quantity for Foe Magnet (free item) is 2 for playerCount=2
-            const foeMagnet = shop.getAvailableItems().find(item => item.item.name === "Foe Magnet");
-            expect(foeMagnet?.quantity).toBe(2); // Should not increase from initial
+            // Initial quantity for Fight or Flight (free item) is 2 for playerCount=2
+            const fightOrFlight = shop.getAvailableItems().find(item => item.item.name === "Fight or Flight");
+            expect(fightOrFlight?.quantity).toBe(2); // Should not increase from initial
         });
 
         it('should add items to existing shop inventory if item already exists', () => {
