@@ -101,6 +101,33 @@ describe('Shop Class', () => {
             expect(availableItems).toContain("Vampiric Blade");
             expect(availableItems).toContain("Titan's Belt");
         });
+
+        it('should initialize Foe Magnet with quantity matching player count (free adjustment per player)', () => {
+            // Test with 1 player
+            shop = new Shop(mockScene, 1);
+            let foeMagnet = shop.getAvailableItems().find(i => i.item.name === "Foe Magnet");
+            expect(foeMagnet).toBeDefined();
+            expect(foeMagnet?.quantity).toBe(1);
+
+            // Test with 3 players
+            shop = new Shop(mockScene, 3);
+            foeMagnet = shop.getAvailableItems().find(i => i.item.name === "Foe Magnet");
+            expect(foeMagnet).toBeDefined();
+            expect(foeMagnet?.quantity).toBe(3);
+
+            // Test with 8 players
+            shop = new Shop(mockScene, 8);
+            foeMagnet = shop.getAvailableItems().find(i => i.item.name === "Foe Magnet");
+            expect(foeMagnet).toBeDefined();
+            expect(foeMagnet?.quantity).toBe(8);
+        });
+
+        it('should have Foe Magnet with zero cost', () => {
+            shop = new Shop(mockScene, 1);
+            const foeMagnet = shop.getAvailableItems().find(i => i.item.name === "Foe Magnet");
+            expect(foeMagnet).toBeDefined();
+            expect(foeMagnet?.item.cost).toBe(0);
+        });
     });
 
     describe('displayShop', () => {
@@ -208,6 +235,19 @@ describe('Shop Class', () => {
             expect(result).toBe(true);
             expect(mockPlayer1.addGold).toHaveBeenCalledWith(-allItems.foeMagnet.cost);
             expect(mockPlayer1.adjustFoeAttraction).toHaveBeenCalledWith(-1);
+            expect(mockPlayer1.inventory).toContain(allItems.foeMagnet);
+        });
+
+        it('should allow buying foe magnet with 0 gold (free adjustment)', () => {
+            shop = new Shop(mockScene, 1);
+            mockPlayer1.gold = 0; // No gold
+            const magnetIndex = shop.getAvailableItems().findIndex(i => i.item.name === "Foe Magnet");
+
+            const result = shop.buyItem(mockPlayer1, magnetIndex, 1);
+
+            expect(result).toBe(true);
+            expect(mockPlayer1.addGold).toHaveBeenCalledWith(-0); // Free item, -0 gold deducted
+            expect(mockPlayer1.adjustFoeAttraction).toHaveBeenCalledWith(1);
             expect(mockPlayer1.inventory).toContain(allItems.foeMagnet);
         });
         
