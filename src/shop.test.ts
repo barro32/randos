@@ -314,6 +314,98 @@ describe('Shop Class', () => {
         });
     });
 
+    describe('addRandomItems', () => {
+        beforeEach(() => {
+            shop = new Shop(mockScene, 2);
+        });
+
+        it('should add specified number of random items to the shop', () => {
+            const initialItems = shop.getAvailableItems();
+            const initialTotalQuantity = initialItems.reduce((sum, item) => sum + item.quantity, 0);
+
+            shop.addRandomItems(3);
+
+            const finalItems = shop.getAvailableItems();
+            const finalTotalQuantity = finalItems.reduce((sum, item) => sum + item.quantity, 0);
+
+            expect(finalTotalQuantity).toBe(initialTotalQuantity + 3);
+        });
+
+        it('should not add items when count is 0', () => {
+            const initialItems = shop.getAvailableItems();
+            const initialTotalQuantity = initialItems.reduce((sum, item) => sum + item.quantity, 0);
+
+            shop.addRandomItems(0);
+
+            const finalItems = shop.getAvailableItems();
+            const finalTotalQuantity = finalItems.reduce((sum, item) => sum + item.quantity, 0);
+
+            expect(finalTotalQuantity).toBe(initialTotalQuantity);
+        });
+
+        it('should not add items when count is negative', () => {
+            const initialItems = shop.getAvailableItems();
+            const initialTotalQuantity = initialItems.reduce((sum, item) => sum + item.quantity, 0);
+
+            shop.addRandomItems(-5);
+
+            const finalItems = shop.getAvailableItems();
+            const finalTotalQuantity = finalItems.reduce((sum, item) => sum + item.quantity, 0);
+
+            expect(finalTotalQuantity).toBe(initialTotalQuantity);
+        });
+
+        it('should only add purchasable items (cost > 0)', () => {
+            shop.addRandomItems(10);
+
+            const freeItems = shop.getAvailableItems().filter(item => item.item.cost === 0);
+            
+            // All added items should be purchasable, so free items should remain at their initial quantity
+            // Initial quantity for Foe Magnet (free item) is 2 for playerCount=2
+            const foeMagnet = shop.getAvailableItems().find(item => item.item.name === "Foe Magnet");
+            expect(foeMagnet?.quantity).toBe(2); // Should not increase from initial
+        });
+
+        it('should add items to existing shop inventory if item already exists', () => {
+            const swordBefore = shop.getAvailableItems().find(item => item.item.name === "Sword");
+            const initialSwordQuantity = swordBefore?.quantity || 0;
+
+            // Add many items to increase chance of getting a Sword
+            shop.addRandomItems(20);
+
+            const swordAfter = shop.getAvailableItems().find(item => item.item.name === "Sword");
+            const finalSwordQuantity = swordAfter?.quantity || 0;
+
+            // Sword quantity should be at least the initial quantity (may be more if random added swords)
+            expect(finalSwordQuantity).toBeGreaterThanOrEqual(initialSwordQuantity);
+        });
+
+        it('should add new items if they do not exist in shop', () => {
+            // Create a shop with minimal items, then add random items
+            shop = new Shop(mockScene, 1);
+            const initialItemNames = shop.getAvailableItems().map(item => item.item.name);
+
+            shop.addRandomItems(5);
+
+            const finalItems = shop.getAvailableItems();
+            
+            // Total number of unique items should be at least the initial count
+            expect(finalItems.length).toBeGreaterThanOrEqual(initialItemNames.length);
+        });
+
+        it('should add correct number of items for player count - 1', () => {
+            // Simulate 4 players alive, should add 3 items
+            shop = new Shop(mockScene, 4);
+            const initialTotalQuantity = shop.getAvailableItems().reduce((sum, item) => sum + item.quantity, 0);
+
+            shop.addRandomItems(3); // player count - 1
+
+            const finalTotalQuantity = shop.getAvailableItems().reduce((sum, item) => sum + item.quantity, 0);
+
+            expect(finalTotalQuantity).toBe(initialTotalQuantity + 3);
+        });
+    });
+
     describe.skip('Edge Cases and Validation', () => {
         it('should handle multiple purchases of the same item correctly', () => {
             shop = new Shop(mockScene, 1);

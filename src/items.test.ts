@@ -202,4 +202,96 @@ describe('Shop Items', () => {
             });
         });
     });
+
+    describe('Item Stacking', () => {
+        it('should stack Boots of Speed correctly', () => {
+            const player = {
+                increaseSpeed: vi.fn(),
+            } as unknown as Player;
+
+            // Buy boots twice
+            items.bootsOfSpeed.applyEffect(player);
+            items.bootsOfSpeed.applyEffect(player);
+
+            // Should have been called twice with 10 each time
+            expect(player.increaseSpeed).toHaveBeenCalledTimes(2);
+            expect(player.increaseSpeed).toHaveBeenCalledWith(10);
+        });
+
+        it('should stack Sword correctly', () => {
+            const player = {
+                increaseDamage: vi.fn(),
+            } as unknown as Player;
+
+            // Buy sword three times
+            items.sword.applyEffect(player);
+            items.sword.applyEffect(player);
+            items.sword.applyEffect(player);
+
+            // Should have been called three times with 5 each time
+            expect(player.increaseDamage).toHaveBeenCalledTimes(3);
+            expect(player.increaseDamage).toHaveBeenCalledWith(5);
+        });
+
+        it('should stack Shield correctly', () => {
+            const player = {
+                increaseDefense: vi.fn(),
+            } as unknown as Player;
+
+            // Buy shield twice
+            items.shield.applyEffect(player);
+            items.shield.applyEffect(player);
+
+            // Should have been called twice with 5 each time
+            expect(player.increaseDefense).toHaveBeenCalledTimes(2);
+            expect(player.increaseDefense).toHaveBeenCalledWith(5);
+        });
+
+        it('should stack Lucky Charm correctly', () => {
+            const player = {
+                doubleGoldChance: 0,
+            } as unknown as Player;
+
+            // Buy lucky charm three times
+            items.luckyCharm.applyEffect(player);
+            expect(player.doubleGoldChance).toBeCloseTo(0.1);
+            
+            items.luckyCharm.applyEffect(player);
+            expect(player.doubleGoldChance).toBeCloseTo(0.2);
+            
+            items.luckyCharm.applyEffect(player);
+            expect(player.doubleGoldChance).toBeCloseTo(0.3);
+        });
+
+        it('should stack Vampiric Blade correctly', () => {
+            const player = {
+                lifestealPercent: 0,
+            } as unknown as Player;
+
+            // Buy vampiric blade twice
+            items.vampiricBlade.applyEffect(player);
+            expect(player.lifestealPercent).toBe(0.1);
+            
+            items.vampiricBlade.applyEffect(player);
+            expect(player.lifestealPercent).toBe(0.2);
+        });
+
+        it('should stack different items independently', () => {
+            const player = {
+                increaseDamage: vi.fn(),
+                increaseDefense: vi.fn(),
+                increaseSpeed: vi.fn(),
+            } as unknown as Player;
+
+            // Buy different items
+            items.sword.applyEffect(player);
+            items.shield.applyEffect(player);
+            items.bootsOfSpeed.applyEffect(player);
+
+            // Each should be called once
+            expect(player.increaseDamage).toHaveBeenCalledTimes(1);
+            expect(player.increaseDefense).toHaveBeenCalledTimes(1);
+            expect(player.increaseSpeed).toHaveBeenCalledTimes(1);
+        });
+    });
 });
