@@ -173,7 +173,7 @@ class GameController {
             playerInfoElement.innerHTML = `
                 Health: ${currentPlayer.health}/${currentPlayer.maxHealth} | Gold: ${currentPlayer.getGold()}
                 <br>
-                Foe Attraction: ${currentPlayer.foeAttraction} (${currentPlayer.foeAttraction > 0 ? 'Attract' : currentPlayer.foeAttraction < 0 ? 'Repel' : 'Neutral'})
+                Fight or Flight: ${currentPlayer.fightOrFlight} (${currentPlayer.fightOrFlight > 0 ? 'Fight' : currentPlayer.fightOrFlight < 0 ? 'Flight' : 'Neutral'})
                 <br>
                 Inventory: ${inventoryIcons || 'Empty'}
             `;
@@ -198,15 +198,15 @@ class GameController {
                     <p>Cost: ${shopItem.item.cost} Gold | Qty: ${shopItem.quantity}</p>
                 `;
 
-                // Special handling for Foe Magnet - show +/- buttons
+                // Special handling for Fight or Flight - show +/- buttons
                 if (shopItem.item.requiresAdjustmentValue) {
                     const buttonContainer = document.createElement('div');
                     buttonContainer.style.display = 'flex';
                     buttonContainer.style.gap = '5px';
                     
                     const buyMinusButton = document.createElement('button');
-                    buyMinusButton.textContent = 'Buy (-1 Repel)';
-                    buyMinusButton.disabled = currentPlayer.getGold() < shopItem.item.cost || currentPlayer.foeAttraction === -10;
+                    buyMinusButton.textContent = 'Buy (-1 Flight)';
+                    buyMinusButton.disabled = currentPlayer.getGold() < shopItem.item.cost || currentPlayer.fightOrFlight === -10;
                     buyMinusButton.onclick = () => {
                         if (this.game) {
                             this.game.playerAttemptToBuyItem(currentPlayer, index, -1);
@@ -215,8 +215,8 @@ class GameController {
                     };
                     
                     const buyPlusButton = document.createElement('button');
-                    buyPlusButton.textContent = 'Buy (+1 Attract)';
-                    buyPlusButton.disabled = currentPlayer.getGold() < shopItem.item.cost || currentPlayer.foeAttraction === 10;
+                    buyPlusButton.textContent = 'Buy (+1 Fight)';
+                    buyPlusButton.disabled = currentPlayer.getGold() < shopItem.item.cost || currentPlayer.fightOrFlight === 10;
                     buyPlusButton.onclick = () => {
                         if (this.game) {
                             this.game.playerAttemptToBuyItem(currentPlayer, index, 1);

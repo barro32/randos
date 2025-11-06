@@ -34,11 +34,11 @@ describe('Shop Items', () => {
             increaseSpeed: vi.fn(),
             increaseMaxHealth: vi.fn(),
             addGold: vi.fn(),
-            adjustFoeAttraction: vi.fn(),
+            adjustFightOrFlight: vi.fn(),
             doubleGoldChance: 0,
             lifestealPercent: 0,
             healthRegenPercent: 0,
-            foeAttraction: 0,
+            fightOrFlight: 0,
             maxHealth: 150,
             health: 150,
             // Ensure all methods called by items are mocked here
@@ -92,9 +92,9 @@ describe('Shop Items', () => {
                         expect(mockPlayer.increaseDefense).toHaveBeenCalledWith(1);
                         expect(mockPlayer.healthRegenPercent).toBe(0.01);
                         break;
-                    case 'foeMagnet':
-                        // Foe Magnet adjusts foe attraction
-                        expect(mockPlayer.adjustFoeAttraction).toHaveBeenCalledWith(1);
+                    case 'fightOrFlight':
+                        // Fight or Flight adjusts fight or flight stat
+                        expect(mockPlayer.adjustFightOrFlight).toHaveBeenCalledWith(1);
                         break;
                     default:
                         // This case should not be reached if all items are handled
@@ -114,8 +114,8 @@ describe('Shop Items', () => {
         it('should have all items with non-negative costs', () => {
             Object.values(items).forEach(item => {
                 expect(item.cost).toBeGreaterThanOrEqual(0);
-                // Foe Magnet is free (cost 0), all others should have positive costs
-                if (item.name !== 'Foe Magnet') {
+                // Fight or Flight is free (cost 0), all others should have positive costs
+                if (item.name !== 'Fight or Flight') {
                     expect(item.cost).toBeGreaterThan(0);
                 }
             });
