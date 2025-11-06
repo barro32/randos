@@ -111,9 +111,13 @@ describe('Shop Items', () => {
     });
 
     describe('Item Properties Validation', () => {
-        it('should have all items with positive costs', () => {
+        it('should have all items with non-negative costs', () => {
             Object.values(items).forEach(item => {
-                expect(item.cost).toBeGreaterThan(0);
+                expect(item.cost).toBeGreaterThanOrEqual(0);
+                // Foe Magnet is free (cost 0), all others should have positive costs
+                if (item.name !== 'Foe Magnet') {
+                    expect(item.cost).toBeGreaterThan(0);
+                }
             });
         });
 
