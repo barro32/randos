@@ -109,17 +109,5 @@ export const items: { [key: string]: Item } = {
             // Add 1% health regen every 10 seconds
             player.healthRegenPercent = Math.min(1, player.healthRegenPercent + 0.01);
         }
-    },
-    fightOrFlight: {
-        name: "Fight or Flight",
-        description: "Adjust fight or flight +1 to +10 (fight) or -1 to -10 (flight). Free.",
-        icon: "🏃",
-        cost: 0,
-        requiresAdjustmentValue: true,
-        applyEffect: (player, adjustmentValue = 1) => {
-            // Adjust player's fight or flight by the specified value (default +1)
-            // The UI provides +1 or -1 based on which button the player clicks
-            player.adjustFightOrFlight(adjustmentValue);
-        }
     }
 };

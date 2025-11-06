@@ -61,10 +61,6 @@ export class Shop {
         if (items.titansBelt) {
             this.availableItems.push({ item: items.titansBelt, quantity: 1 + bonusQuantity });
         }
-        if (items.fightOrFlight) {
-            // Free adjustment available for each player every round
-            this.availableItems.push({ item: items.fightOrFlight, quantity: playerCount });
-        }
     }
 
     /**
