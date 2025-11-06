@@ -68,6 +68,13 @@ export class Player {
     private lastRegenTime: number = 0;
     private regenInterval: number = 10000; // 10 seconds
     public fightOrFlight: number = 0; // Fight or flight response: positive values make player pursue enemies, negative values make them flee (-10 to +10)
+    
+    // Leveling system properties
+    public level: number = 1; // Current level
+    public xp: number = 0; // Current experience points
+    public xpToNextLevel: number = 100; // XP required for next level
+    public availableStatPoints: number = 0; // Points available to allocate to stats
+    private lastXpGainTime: number = 0; // Last time XP was gained from time passing
 
     constructor(scene: Phaser.Scene, x: number, y: number, id: string, color: number) {
         this.scene = scene;
@@ -112,6 +119,9 @@ export class Player {
      */
     public update(time: number, nearbyEnemies?: Array<{ x: number; y: number; isAlive: boolean }>): void {
         if (!this.isAlive) return;
+
+        // Update XP gain from time passing
+        this.updateXPGain(time);
 
         // Handle invulnerability duration
         if (this.isInvulnerable && time - this.lastHitTime > this.invulnerabilityDuration) {
@@ -424,6 +434,79 @@ export class Player {
      */
     public adjustFightOrFlight(amount: number): void {
         this.fightOrFlight = Math.max(-10, Math.min(10, this.fightOrFlight + amount));
+    }
+
+    /**
+     * Add experience points to the player and handle level ups
+     * @param amount - Amount of XP to add
+     */
+    public addXP(amount: number): void {
+        if (!this.isAlive) return;
+        
+        this.xp += amount;
+        
+        // Check for level up
+        while (this.xp >= this.xpToNextLevel) {
+            this.levelUp();
+        }
+    }
+
+    /**
+     * Handle player leveling up
+     */
+    private levelUp(): void {
+        this.xp -= this.xpToNextLevel;
+        this.level++;
+        this.availableStatPoints += 3; // Give 3 stat points per level
+        
+        // Calculate next level requirement (10% more than current)
+        this.xpToNextLevel = Math.floor(this.xpToNextLevel * 1.1);
+    }
+
+    /**
+     * Allocate a stat point to a specific stat
+     * @param stat - The stat to increase ('damage', 'speed', or 'health')
+     * @returns True if the stat point was allocated successfully
+     */
+    public allocateStatPoint(stat: 'damage' | 'speed' | 'health'): boolean {
+        if (this.availableStatPoints <= 0) return false;
+        
+        switch (stat) {
+            case 'damage':
+                this.increaseDamage(5); // 5 damage per point
+                break;
+            case 'speed':
+                this.increaseSpeed(5); // 5 speed per point
+                break;
+            case 'health':
+                this.increaseMaxHealth(20); // 20 max health per point
+                break;
+            default:
+                return false;
+        }
+        
+        this.availableStatPoints--;
+        return true;
+    }
+
+    /**
+     * Update XP gain from time passing (1 XP per second)
+     * @param time - Current game time in milliseconds
+     */
+    public updateXPGain(time: number): void {
+        if (!this.isAlive) return;
+        
+        // Give 1 XP per second
+        if (this.lastXpGainTime === 0) {
+            this.lastXpGainTime = time;
+        }
+        
+        const timeSinceLastXpGain = time - this.lastXpGainTime;
+        if (timeSinceLastXpGain >= 1000) {
+            const xpToGain = Math.floor(timeSinceLastXpGain / 1000);
+            this.addXP(xpToGain);
+            this.lastXpGainTime = time;
+        }
     }
 
     /**
