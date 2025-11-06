@@ -115,7 +115,7 @@ describe('Shop Items', () => {
             Object.values(items).forEach(item => {
                 expect(item.cost).toBeGreaterThanOrEqual(0);
                 // Foe Magnet is free (cost 0), all others should have positive costs
-                if (item.name !== 'Foe Magnet' && item.name !== 'Gold Magnet') {
+                if (item.name !== 'Foe Magnet') {
                     expect(item.cost).toBeGreaterThan(0);
                 }
             });
