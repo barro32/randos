@@ -70,6 +70,18 @@ class GameController {
         });
     }
 
+    /**
+     * Sort players by combined health and gold (lowest first, highest last)
+     * This ensures players most in need get shopping priority
+     */
+    private sortPlayersByHealthAndGold(players: Player[]): Player[] {
+        return players.sort((a, b) => {
+            const scoreA = a.health + a.getGold();
+            const scoreB = b.health + b.getGold();
+            return scoreA - scoreB;
+        });
+    }
+
     private startGame(playerCount: number): void {
         if (this.game) {
             this.game.destroy();
@@ -93,7 +105,7 @@ class GameController {
             this.currentPlayerIndexForShop = 0; // Reset for the first player
             const alivePlayers = this.game.gameScene.getAlivePlayers();
             if (alivePlayers) {
-                this.sortedPlayersForShop = alivePlayers.sort((a, b) => a.getGold() - b.getGold());
+                this.sortedPlayersForShop = this.sortPlayersByHealthAndGold(alivePlayers);
             } else {
                 this.sortedPlayersForShop = [];
             }
@@ -241,7 +253,7 @@ class GameController {
                     if (this.sortedPlayersForShop.length === 0 && this.game && this.game.gameScene) {
                         const alivePlayers = this.game.gameScene.getAlivePlayers();
                         if (alivePlayers) {
-                            this.sortedPlayersForShop = alivePlayers.sort((a, b) => a.getGold() - b.getGold());
+                            this.sortedPlayersForShop = this.sortPlayersByHealthAndGold(alivePlayers);
                             this.currentPlayerIndexForShop = 0;
                         }
                     }
