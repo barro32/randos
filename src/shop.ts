@@ -24,44 +24,45 @@ export class Shop {
 
     /**
      * Initialize shop items based on player count
-     * Health potion quantity is calculated as Math.max(0, playerCount - 1)
-     * Other items have fixed default quantities
+     * Each item gets a base quantity plus (playerCount - 1) additional items
      * @param playerCount - Number of players in the game
      */
     private initializeShopItems(playerCount: number): void {
+        const bonusQuantity = Math.max(0, playerCount - 1);
+
         // Add health potion
         if (items.healthPotion) {
             this.availableItems.push({
                 item: items.healthPotion,
-                quantity: Math.max(0, playerCount - 1)
+                quantity: 0 + bonusQuantity
             });
         }
 
-        // Add other items with default quantities
+        // Add other items with base quantities plus bonus
         if (items.sword) {
-            this.availableItems.push({ item: items.sword, quantity: 2 });
+            this.availableItems.push({ item: items.sword, quantity: 2 + bonusQuantity });
         }
         if (items.shield) {
-            this.availableItems.push({ item: items.shield, quantity: 2 });
+            this.availableItems.push({ item: items.shield, quantity: 2 + bonusQuantity });
         }
         // Gold Magnet removed - goldPerHit no longer exists
         if (items.bootsOfSpeed) {
-            this.availableItems.push({ item: items.bootsOfSpeed, quantity: 1 });
+            this.availableItems.push({ item: items.bootsOfSpeed, quantity: 1 + bonusQuantity });
         }
         if (items.amuletOfVitality) {
-            this.availableItems.push({ item: items.amuletOfVitality, quantity: 1 });
+            this.availableItems.push({ item: items.amuletOfVitality, quantity: 1 + bonusQuantity });
         }
         if (items.luckyCharm) {
-            this.availableItems.push({ item: items.luckyCharm, quantity: 2 });
+            this.availableItems.push({ item: items.luckyCharm, quantity: 2 + bonusQuantity });
         }
         if (items.vampiricBlade) {
-            this.availableItems.push({ item: items.vampiricBlade, quantity: 1 });
+            this.availableItems.push({ item: items.vampiricBlade, quantity: 1 + bonusQuantity });
         }
         if (items.titansBelt) {
-            this.availableItems.push({ item: items.titansBelt, quantity: 1 });
+            this.availableItems.push({ item: items.titansBelt, quantity: 1 + bonusQuantity });
         }
         if (items.foeMagnet) {
-            this.availableItems.push({ item: items.foeMagnet, quantity: 1 });
+            this.availableItems.push({ item: items.foeMagnet, quantity: 1 + bonusQuantity });
         }
     }
 
