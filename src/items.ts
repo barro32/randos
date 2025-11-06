@@ -112,9 +112,9 @@ export const items: { [key: string]: Item } = {
     },
     foeMagnet: {
         name: "Foe Magnet",
-        description: "Adjust foe attraction +1 to +10 (attract) or -1 to -10 (repel).",
+        description: "Adjust foe attraction +1 to +10 (attract) or -1 to -10 (repel). Free.",
         icon: "🧲",
-        cost: 7,
+        cost: 0,
         requiresAdjustmentValue: true,
         applyEffect: (player, adjustmentValue = 1) => {
             // Adjust player's foe attraction by the specified value (default +1)

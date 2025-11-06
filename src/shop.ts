@@ -61,7 +61,8 @@ export class Shop {
             this.availableItems.push({ item: items.titansBelt, quantity: 1 });
         }
         if (items.foeMagnet) {
-            this.availableItems.push({ item: items.foeMagnet, quantity: 1 });
+            // Free adjustment available for each player every round
+            this.availableItems.push({ item: items.foeMagnet, quantity: playerCount });
         }
     }
 
