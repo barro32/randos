@@ -499,13 +499,15 @@ export class Player {
         // Give 1 XP per second
         if (this.lastXpGainTime === 0) {
             this.lastXpGainTime = time;
+            return; // Skip the first call to avoid immediate XP gain
         }
         
         const timeSinceLastXpGain = time - this.lastXpGainTime;
         if (timeSinceLastXpGain >= 1000) {
             const xpToGain = Math.floor(timeSinceLastXpGain / 1000);
             this.addXP(xpToGain);
-            this.lastXpGainTime = time;
+            // Preserve fractional timing by adding only the consumed milliseconds
+            this.lastXpGainTime += xpToGain * 1000;
         }
     }
 
