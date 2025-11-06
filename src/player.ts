@@ -28,6 +28,7 @@ const PLAYER_CONSTANTS = {
     INVULNERABLE_ALPHA: 0.7,
     MIN_SPEED_FACTOR: 0.1,
     // Fight or Flight constants
+    FIGHT_OR_FLIGHT_MAX_STAT_VALUE: 10, // Maximum stat value (+/- 10)
     FIGHT_OR_FLIGHT_BASE_RANGE: 100, // Base detection range for enemies
     FIGHT_OR_FLIGHT_MAX_RANGE: 400, // Maximum detection range at +/-10
     FIGHT_OR_FLIGHT_MAX_SPEED_BOOST: 0.5, // Maximum speed boost (50% at +/-10)
@@ -178,7 +179,7 @@ export class Player {
         if (this.fightOrFlight !== 0 && nearbyEnemies && nearbyEnemies.length > 0) {
             // Find the closest alive enemy
             let closestDistance = Infinity;
-            let closestEnemy: { x: number; y: number; isAlive: boolean } | undefined = undefined;
+            let closestEnemy: { x: number; y: number; isAlive: boolean } | undefined;
             
             for (const enemy of nearbyEnemies) {
                 if (!enemy.isAlive) continue;
@@ -197,7 +198,8 @@ export class Player {
                 // Calculate base detection range (increases with stat magnitude)
                 const statMagnitude = Math.abs(this.fightOrFlight);
                 const detectionRange = PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_BASE_RANGE + 
-                    (PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_MAX_RANGE - PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_BASE_RANGE) * (statMagnitude / 10);
+                    (PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_MAX_RANGE - PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_BASE_RANGE) * 
+                    (statMagnitude / PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_MAX_STAT_VALUE);
                 
                 // Only react to enemies within detection range
                 if (closestDistance < detectionRange) {
@@ -214,11 +216,12 @@ export class Player {
                     }
                     
                     // Apply speed boost based on stat magnitude
-                    const speedBoostFactor = 1 + (statMagnitude / 10) * PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_MAX_SPEED_BOOST;
+                    const speedBoostFactor = 1 + (statMagnitude / PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_MAX_STAT_VALUE) * 
+                        PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_MAX_SPEED_BOOST;
                     const boostedSpeed = this.moveSpeed * speedBoostFactor;
                     
                     // Blend between current angle and target angle based on stat magnitude
-                    const influenceFactor = statMagnitude / 10; // 0 to 1
+                    const influenceFactor = statMagnitude / PLAYER_CONSTANTS.FIGHT_OR_FLIGHT_MAX_STAT_VALUE; // 0 to 1
                     const angleDiff = targetAngle - currentAngle;
                     // Normalize angle difference to -PI to PI range
                     const normalizedDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
