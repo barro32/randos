@@ -11,6 +11,7 @@ describe('Enemy Configurations', () => {
             expect(weakConfig.size).toBe(25);
             expect(weakConfig.moveSpeed).toBe(30);
             expect(weakConfig.color).toBe(0x90EE90); // Light green
+            expect(weakConfig.goldReward).toBe(2);
         });
 
         it('should have the least health compared to other types', () => {
@@ -38,6 +39,7 @@ describe('Enemy Configurations', () => {
             expect(mediumConfig.size).toBe(35);
             expect(mediumConfig.moveSpeed).toBe(40);
             expect(mediumConfig.color).toBe(0xFFA500); // Orange
+            expect(mediumConfig.goldReward).toBe(6);
         });
 
         it('should have medium health between weak and strong', () => {
@@ -65,6 +67,7 @@ describe('Enemy Configurations', () => {
             expect(strongConfig.size).toBe(45);
             expect(strongConfig.moveSpeed).toBe(25);
             expect(strongConfig.color).toBe(0xFF4500); // Red-orange
+            expect(strongConfig.goldReward).toBe(10);
         });
 
         it('should have the most health', () => {
@@ -157,6 +160,17 @@ describe('Enemy Configurations', () => {
                     expect(config.size).toBeLessThan(ENEMY_CONFIGS[EnemyType.Strong].size);
                 }
             });
+        });
+
+        it('should have gold rewards that scale with enemy difficulty', () => {
+            // Gold rewards should increase from Weak to Strong
+            expect(ENEMY_CONFIGS[EnemyType.Weak].goldReward).toBeLessThan(ENEMY_CONFIGS[EnemyType.Medium].goldReward);
+            expect(ENEMY_CONFIGS[EnemyType.Medium].goldReward).toBeLessThan(ENEMY_CONFIGS[EnemyType.Strong].goldReward);
+            
+            // Verify specific doubled values
+            expect(ENEMY_CONFIGS[EnemyType.Weak].goldReward).toBe(2);
+            expect(ENEMY_CONFIGS[EnemyType.Medium].goldReward).toBe(6);
+            expect(ENEMY_CONFIGS[EnemyType.Strong].goldReward).toBe(10);
         });
     });
 });
