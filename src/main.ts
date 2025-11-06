@@ -215,7 +215,8 @@ class GameController {
             decreaseButton.disabled = !canDecrease;
             increaseButton.disabled = !canIncrease;
 
-            // Remove existing event listeners by cloning nodes
+            // Clone and replace buttons to remove old event listeners
+            // This is simpler than tracking listeners across displayShopUI calls
             const newDecreaseButton = decreaseButton.cloneNode(true) as HTMLButtonElement;
             const newIncreaseButton = increaseButton.cloneNode(true) as HTMLButtonElement;
             decreaseButton.parentNode?.replaceChild(newDecreaseButton, decreaseButton);
@@ -257,7 +258,7 @@ class GameController {
                     <p>Cost: ${shopItem.item.cost} Gold | Qty: ${shopItem.quantity}</p>
                 `;
 
-                // Regular buy button for all items (no special handling needed anymore)
+                // All items now use standard buy button (Fight or Flight moved to Player Stats section)
                 const buyButton = document.createElement('button');
                 buyButton.textContent = 'Buy';
                 buyButton.disabled = currentPlayer.getGold() < shopItem.item.cost;
